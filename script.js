@@ -278,15 +278,32 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // QRコード生成ライブラリの読み込み確認
-    if (typeof QRCode === 'undefined') {
-        console.error('QRCodeライブラリが読み込まれていません');
-        // ライブラリが読み込まれていない場合でもボタンは有効のままにする
-        // 実際の生成時にエラーハンドリングを行う
-    }
+    checkQRCodeLibrary();
 
     // QRコードオプションの設定
     setupQRCodeOptions();
 });
+
+// QRCodeライブラリの読み込み確認
+function checkQRCodeLibrary() {
+    if (typeof QRCode === 'undefined') {
+        console.error('QRCodeライブラリが読み込まれていません');
+        // 少し待ってから再チェック
+        setTimeout(() => {
+            if (typeof QRCode === 'undefined') {
+                console.error('QRCodeライブラリの読み込みに失敗しました');
+                generateQRBtn.disabled = true;
+                generateQRBtn.textContent = 'ライブラリ読み込みエラー';
+            } else {
+                console.log('QRCodeライブラリが正常に読み込まれました');
+                generateQRBtn.disabled = false;
+                generateQRBtn.textContent = 'QRコード生成';
+            }
+        }, 1000);
+    } else {
+        console.log('QRCodeライブラリが正常に読み込まれました');
+    }
+}
 
 // ページ離脱時のクリーンアップ
 window.addEventListener('beforeunload', () => {
