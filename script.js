@@ -590,10 +590,6 @@ const createUpstream = (value) => {
 
 // CompressionStreamで圧縮
 async function compressWithDeflate(data) {
-    if (!window.CompressionStream) {
-        return binaryToUrlSafeBase64(textEncoder.encode(data));
-    }
-
     const upstream = createUpstream(textEncoder.encode(data));
     const compression = new CompressionStream('deflate-raw');
     const stream = upstream.pipeThrough(compression);
@@ -604,11 +600,6 @@ async function compressWithDeflate(data) {
 
 // CompressionStreamで解凍
 async function decompressWithDeflate(encodedData) {
-    if (!window.DecompressionStream) {
-        const binaryData = urlSafeBase64ToBinary(encodedData);
-        return textDecoder.decode(binaryData);
-    }
-
     const compressedData = urlSafeBase64ToBinary(encodedData);
     const upstream = createUpstream(compressedData);
     const decompression = new DecompressionStream('deflate-raw');
