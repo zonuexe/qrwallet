@@ -410,8 +410,8 @@ function updateURL() {
                     // 圧縮に失敗した場合はBase64エンコードを使用
                     fallbackToBase64(jsonData);
                 } else {
-                    // 圧縮結果をBase64エンコード
-                    const compressedData = btoa(String.fromCharCode.apply(null, result));
+                    // 圧縮結果をBase64エンコード（バイナリデータ対応）
+                    const compressedData = arrayBufferToBase64(result);
                     const url = new URL(window.location);
                     url.searchParams.set('history', compressedData);
                     url.searchParams.set('compression', 'lzma');
@@ -426,6 +426,27 @@ function updateURL() {
     } catch (error) {
         console.error('URL更新エラー:', error);
     }
+}
+
+// バイナリデータをBase64エンコード
+function arrayBufferToBase64(buffer) {
+    let binary = '';
+    const bytes = new Uint8Array(buffer);
+    const len = bytes.byteLength;
+    for (let i = 0; i < len; i++) {
+        binary += String.fromCharCode(bytes[i]);
+    }
+    return btoa(binary);
+}
+
+// Base64からバイナリデータに変換
+function base64ToArrayBuffer(base64) {
+    const binaryString = atob(base64);
+    const bytes = new Uint8Array(binaryString.length);
+    for (let i = 0; i < binaryString.length; i++) {
+        bytes[i] = binaryString.charCodeAt(i);
+    }
+    return bytes;
 }
 
 // Base64エンコードのフォールバック
@@ -449,7 +470,7 @@ function loadHistoryFromURL() {
     try {
         if (compression === 'lzma' && typeof LZMA !== 'undefined') {
             // LZMA解凍を実行
-            const compressedData = new Uint8Array(atob(encodedData).split('').map(char => char.charCodeAt(0)));
+            const compressedData = base64ToArrayBuffer(encodedData);
             LZMA.decompress(compressedData, function (result, error) {
                 if (error) {
                     console.error('LZMA解凍エラー:', error);
