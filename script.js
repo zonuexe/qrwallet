@@ -388,8 +388,13 @@ function updateURL() {
         const jsonData = JSON.stringify(qrHistory);
         console.log('JSON data length:', jsonData.length);
 
-        // CompressionStreamで圧縮
-        compressWithDeflate(jsonData).then(compressedData => {
+        // CompressionStreamで圧縮（タイムアウト付き）
+        const compressionPromise = compressWithDeflate(jsonData);
+        const timeoutPromise = new Promise((_, reject) => {
+            setTimeout(() => reject(new Error('圧縮タイムアウト')), 5000);
+        });
+
+        Promise.race([compressionPromise, timeoutPromise]).then(compressedData => {
             console.log('圧縮完了, 圧縮データ長:', compressedData.length);
             const url = new URL(window.location);
             url.search = '?' + compressedData;
@@ -398,7 +403,13 @@ function updateURL() {
             console.log('URL更新後:', window.location.href);
             console.log('Deflate圧縮でURLを更新しました:', url.href);
         }).catch(error => {
-            console.error('圧縮エラー:', error);
+            console.error('圧縮エラーまたはタイムアウト:', error);
+            // エラー時はフォールバックでBase64エンコード
+            const fallbackData = binaryToUrlSafeBase64(new TextEncoder().encode(jsonData));
+            const url = new URL(window.location);
+            url.search = '?' + fallbackData;
+            window.history.replaceState({}, '', url);
+            console.log('フォールバックBase64でURLを更新しました:', url.href);
         });
     } catch (error) {
         console.error('URL更新エラー:', error);
@@ -611,7 +622,7 @@ function urlSafeBase64ToBinary(encoded) {
 // CompressionStreamで圧縮
 async function compressWithDeflate(data) {
     console.log('compressWithDeflate開始, データ長:', data.length);
-    
+
     // CompressionStreamのサポート確認
     if (!window.CompressionStream) {
         console.warn('CompressionStreamがサポートされていません。Base64エンコードを使用します。');
@@ -630,16 +641,30 @@ async function compressWithDeflate(data) {
         const encoder = new TextEncoder();
         const chunk = encoder.encode(data);
         console.log('データ書き込み開始, バイト長:', chunk.length);
-        await writer.write(chunk);
-        await writer.close();
+
+        try {
+            await writer.write(chunk);
+            console.log('writer.write完了');
+            await writer.close();
+            console.log('writer.close完了');
+        } catch (writeError) {
+            console.error('データ書き込みエラー:', writeError);
+            throw writeError;
+        }
+
         console.log('データ書き込み完了');
 
         // 圧縮データを読み取り
         const chunks = [];
-        while (true) {
-            const { done, value } = await reader.read();
-            if (done) break;
-            chunks.push(value);
+        try {
+            while (true) {
+                const { done, value } = await reader.read();
+                if (done) break;
+                chunks.push(value);
+            }
+        } catch (readError) {
+            console.error('データ読み取りエラー:', readError);
+            throw readError;
         }
         console.log('圧縮データ読み取り完了, チャンク数:', chunks.length);
 
