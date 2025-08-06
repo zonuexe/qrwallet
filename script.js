@@ -291,7 +291,7 @@ function showCompressionInfo() {
         const compressionRatio = ((1 - compressedSize / originalSize) * 100).toFixed(1);
 
         console.log(`圧縮情報: 元サイズ ${originalSize}バイト → 圧縮後 ${compressedSize}バイト (圧縮率: ${compressionRatio}%)`);
-        console.log('LZMA圧縮 + 高効率URLセーフエンコードを使用しています');
+        console.log('lz-string圧縮を使用しています');
     }
 }
 
@@ -384,80 +384,18 @@ function updateURL() {
         // 履歴データをJSONに変換
         const jsonData = JSON.stringify(qrHistory);
 
-        // LZMA圧縮を実行
-        LZMA.compress(jsonData, 9, function (result, error) {
-            if (error) {
-                console.error('LZMA圧縮エラー:', error);
-                return;
-            }
-
-            // 圧縮結果を高効率エンコード
-            const compressedData = binaryToUrlSafe(result);
-            const url = new URL(window.location);
-            url.searchParams.set('history', compressedData);
-            window.history.replaceState({}, '', url);
-            console.log('LZMA圧縮でURLを更新しました');
-        });
+        // lz-stringで圧縮
+        const compressedData = LZString.compressToEncodedURIComponent(jsonData);
+        const url = new URL(window.location);
+        url.searchParams.set('history', compressedData);
+        window.history.replaceState({}, '', url);
+        console.log('lz-string圧縮でURLを更新しました');
     } catch (error) {
         console.error('URL更新エラー:', error);
     }
 }
 
-// 高効率URLセーフエンコーディング（Base64よりも効率的）
-// 使用文字: A-Z, a-z, 0-9, -, _, ~, ., :, @, !, $, &, ', (, ), *, +, ,, ;, =, ?, #, [, ]
-// 合計67文字（Base64の64文字より多い）
-const URL_SAFE_CHARS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_~.:@!$&\'()*+,;=?%#[]';
 
-// バイナリデータを高効率URLセーフエンコード
-function binaryToUrlSafe(buffer) {
-    const bytes = new Uint8Array(buffer);
-    let result = '';
-    let bits = 0;
-    let bitCount = 0;
-
-    for (let i = 0; i < bytes.length; i++) {
-        bits = (bits << 8) | bytes[i];
-        bitCount += 8;
-
-        while (bitCount >= 6) {
-            bitCount -= 6;
-            const index = (bits >> bitCount) & 0x3F;
-            result += URL_SAFE_CHARS[index];
-        }
-    }
-
-    // 残りのビットを処理
-    if (bitCount > 0) {
-        bits = bits << (6 - bitCount);
-        const index = bits & 0x3F;
-        result += URL_SAFE_CHARS[index];
-    }
-
-    return result;
-}
-
-// URLセーフエンコードからバイナリデータに変換
-function urlSafeToBinary(encoded) {
-    const bytes = [];
-    let bits = 0;
-    let bitCount = 0;
-
-    for (let i = 0; i < encoded.length; i++) {
-        const char = encoded[i];
-        const index = URL_SAFE_CHARS.indexOf(char);
-        if (index === -1) continue;
-
-        bits = (bits << 6) | index;
-        bitCount += 6;
-
-        while (bitCount >= 8) {
-            bitCount -= 8;
-            bytes.push((bits >> bitCount) & 0xFF);
-        }
-    }
-
-    return new Uint8Array(bytes);
-}
 
 
 
@@ -469,18 +407,13 @@ function loadHistoryFromURL() {
     if (!encodedData) return;
 
     try {
-        // LZMA解凍を実行
-        const compressedData = urlSafeToBinary(encodedData);
-        LZMA.decompress(compressedData, function (result, error) {
-            if (error) {
-                console.error('LZMA解凍エラー:', error);
-                return;
-            }
-            // 解凍結果をJSONとして解析
-            const historyData = JSON.parse(result);
+        // lz-stringで解凍
+        const decompressedData = LZString.decompressFromEncodedURIComponent(encodedData);
+        if (decompressedData) {
+            const historyData = JSON.parse(decompressedData);
             restoreHistory(historyData);
-            console.log('LZMA解凍で履歴を読み込みました:', historyData.length, '件');
-        });
+            console.log('lz-string解凍で履歴を読み込みました:', historyData.length, '件');
+        }
     } catch (error) {
         console.error('履歴読み込みエラー:', error);
     }
