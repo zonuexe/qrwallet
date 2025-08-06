@@ -162,7 +162,7 @@ function playSuccessSound() {
         oscillator.start(audioContext.currentTime);
         oscillator.stop(audioContext.currentTime + 0.2);
     } catch (error) {
-        console.log('音声再生に失敗しました:', error);
+        // 音声再生エラーは無視
     }
 }
 
@@ -221,7 +221,6 @@ function generateQRCode() {
             }
 
             // 成功メッセージ
-            console.log('QRコードが生成されました');
         }
     });
 }
@@ -274,8 +273,6 @@ function saveToHistory() {
     // 履歴に保存ボタンを無効化
     saveToHistoryBtn.disabled = true;
 
-    console.log('履歴に保存されました:', currentQRData);
-
     // 圧縮情報を表示
     showCompressionInfo();
 }
@@ -290,8 +287,7 @@ function showCompressionInfo() {
         const compressedSize = historyParam.length;
         const compressionRatio = ((1 - compressedSize / originalSize) * 100).toFixed(1);
 
-        console.log(`圧縮情報: 元サイズ ${originalSize}バイト → 圧縮後 ${compressedSize}バイト (圧縮率: ${compressionRatio}%)`);
-        console.log('Deflate圧縮 + 高効率URLセーフBase64を使用しています');
+
     }
 }
 
@@ -301,7 +297,6 @@ function clearHistory() {
         qrHistory = [];
         updateHistoryDisplay();
         updateURL();
-        console.log('履歴をクリアしました');
     }
 }
 
@@ -372,21 +367,18 @@ function deleteHistoryItem(index) {
 
 // URLを更新（履歴をLZMA圧縮してエンコード）
 function updateURL() {
-    console.log('updateURL called, qrHistory length:', qrHistory.length);
 
     if (qrHistory.length === 0) {
         // 履歴が空の場合はURLから履歴パラメータを削除
         const url = new URL(window.location);
         url.search = '';
         window.history.replaceState({}, '', url);
-        console.log('履歴が空のためURLをクリアしました');
         return;
     }
 
     try {
         // 履歴データをJSONに変換
         const jsonData = JSON.stringify(qrHistory);
-        console.log('JSON data length:', jsonData.length);
 
         // CompressionStreamで圧縮（タイムアウト付き）
         const compressionPromise = compressWithDeflate(jsonData);
@@ -395,13 +387,9 @@ function updateURL() {
         });
 
         Promise.race([compressionPromise, timeoutPromise]).then(compressedData => {
-            console.log('圧縮完了, 圧縮データ長:', compressedData.length);
             const url = new URL(window.location);
             url.search = '?' + compressedData;
-            console.log('URL更新前:', window.location.href);
             window.history.replaceState({}, '', url);
-            console.log('URL更新後:', window.location.href);
-            console.log('Deflate圧縮でURLを更新しました:', url.href);
         }).catch(error => {
             console.error('圧縮エラーまたはタイムアウト:', error);
             // エラー時はフォールバックでBase64エンコード
@@ -409,7 +397,6 @@ function updateURL() {
             const url = new URL(window.location);
             url.search = '?' + fallbackData;
             window.history.replaceState({}, '', url);
-            console.log('フォールバックBase64でURLを更新しました:', url.href);
         });
     } catch (error) {
         console.error('URL更新エラー:', error);
@@ -432,7 +419,6 @@ function loadHistoryFromURL() {
         decompressWithDeflate(encodedData).then(decompressedData => {
             const historyData = JSON.parse(decompressedData);
             restoreHistory(historyData);
-            console.log('Deflate解凍で履歴を読み込みました:', historyData.length, '件');
         }).catch(error => {
             console.error('解凍エラー:', error);
         });
@@ -536,13 +522,10 @@ function checkQRCodeLibrary() {
                 generateQRBtn.disabled = true;
                 generateQRBtn.textContent = 'ライブラリ読み込みエラー';
             } else {
-                console.log('QRCodeライブラリが正常に読み込まれました');
                 generateQRBtn.disabled = false;
                 generateQRBtn.textContent = 'QRコード生成';
             }
         }, 1000);
-    } else {
-        console.log('QRCodeライブラリが正常に読み込まれました');
     }
 }
 
@@ -635,34 +618,26 @@ const createUpstream = (value) => {
 
 // CompressionStreamで圧縮
 async function compressWithDeflate(data) {
-    console.log('compressWithDeflate開始, データ長:', data.length);
 
     // CompressionStreamのサポート確認
     if (!window.CompressionStream) {
-        console.warn('CompressionStreamがサポートされていません。Base64エンコードを使用します。');
         const result = binaryToUrlSafeBase64(textEncoder.encode(data));
-        console.log('フォールバックBase64エンコード完了, 結果長:', result.length);
         return result;
     }
 
     try {
-        console.log('CompressionStream開始');
         const upstream = createUpstream(textEncoder.encode(data));
-        const compression = new CompressionStream('deflate');
+        const compression = new CompressionStream('deflate-raw');
         const stream = upstream.pipeThrough(compression);
         const compressed = await new Response(stream).arrayBuffer();
 
-        console.log('圧縮完了, 圧縮データ長:', compressed.byteLength);
-
         // 高効率URLセーフBase64エンコード
         const result = binaryToUrlSafeBase64(new Uint8Array(compressed));
-        console.log('URLセーフBase64エンコード完了, 結果長:', result.length);
         return result;
     } catch (error) {
         console.error('CompressionStreamエラー:', error);
         // フォールバック: 単純なBase64エンコード
         const result = binaryToUrlSafeBase64(textEncoder.encode(data));
-        console.log('エラー後のフォールバックBase64エンコード完了, 結果長:', result.length);
         return result;
     }
 }
@@ -671,7 +646,6 @@ async function compressWithDeflate(data) {
 async function decompressWithDeflate(encodedData) {
     // CompressionStreamのサポート確認
     if (!window.DecompressionStream) {
-        console.warn('DecompressionStreamがサポートされていません。Base64デコードを使用します。');
         const binaryData = urlSafeBase64ToBinary(encodedData);
         return textDecoder.decode(binaryData);
     }
@@ -679,7 +653,7 @@ async function decompressWithDeflate(encodedData) {
     try {
         const compressedData = urlSafeBase64ToBinary(encodedData);
         const upstream = createUpstream(compressedData);
-        const decompression = new DecompressionStream('deflate');
+        const decompression = new DecompressionStream('deflate-raw');
         const stream = upstream.pipeThrough(decompression);
         const decompressed = await new Response(stream).arrayBuffer();
 
