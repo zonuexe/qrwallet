@@ -177,8 +177,12 @@ function generateQRCode() {
     const darkColor = qrDarkColor.value;
     const lightColor = qrLightColor.value;
 
+    // Canvas要素を作成
+    const canvas = document.createElement('canvas');
+    qrCode.appendChild(canvas);
+
     // QRコードを生成
-    QRCode.toCanvas(qrCode, text, {
+    QRCode.toCanvas(canvas, text, {
         width: size,
         height: size,
         margin: margin,
