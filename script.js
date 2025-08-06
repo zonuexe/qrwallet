@@ -373,9 +373,9 @@ function deleteHistoryItem(index) {
 // URLを更新（履歴をLZMA圧縮してエンコード）
 function updateURL() {
     if (qrHistory.length === 0) {
-        // 履歴がない場合はURLパラメータを削除
+        // 履歴が空の場合はURLから履歴パラメータを削除
         const url = new URL(window.location);
-        url.searchParams.delete('history');
+        url.search = '';
         window.history.replaceState({}, '', url);
         return;
     }
@@ -387,7 +387,7 @@ function updateURL() {
         // CompressionStreamで圧縮
         compressWithDeflate(jsonData).then(compressedData => {
             const url = new URL(window.location);
-            url.searchParams.set('history', compressedData);
+            url.search = '?' + compressedData;
             window.history.replaceState({}, '', url);
             console.log('Deflate圧縮でURLを更新しました');
         }).catch(error => {
@@ -405,7 +405,7 @@ function updateURL() {
 // URLから履歴を読み込み
 function loadHistoryFromURL() {
     const url = new URL(window.location);
-    const encodedData = url.searchParams.get('history');
+    const encodedData = url.search.substring(1); // ?を除いた部分
 
     if (!encodedData) return;
 
@@ -546,9 +546,9 @@ window.addEventListener('unhandledrejection', (e) => {
 });
 
 // 高効率URLセーフBase64エンコーディング
-// 使用文字: A-Z, a-z, 0-9, -, _, ~, ., :, @, !, $, ', (, ), *, +, ,, ;, =, ?, #, [, ]
-// &を除外して66文字（Base64の64文字より2文字多い）
-const URL_SAFE_CHARS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_~.:@!$\'()*+,;=?%#[]';
+// 使用文字: A-Z, a-z, 0-9, -, _, ~, ., :, @, !, $, &, ', (, ), *, +, ,, ;, ?, #, [, ]
+// =を除外して68文字（Base64の64文字より4文字多い）
+const URL_SAFE_CHARS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_~.:@!$&\'()*+,;?#[]';
 
 // バイナリデータを高効率URLセーフBase64エンコード
 function binaryToUrlSafeBase64(buffer) {
@@ -606,13 +606,13 @@ async function compressWithDeflate(data) {
     const stream = new CompressionStream('deflate');
     const writer = stream.writable.getWriter();
     const reader = stream.readable.getReader();
-    
+
     // データを書き込み
     const encoder = new TextEncoder();
     const chunk = encoder.encode(data);
     await writer.write(chunk);
     await writer.close();
-    
+
     // 圧縮データを読み取り
     const chunks = [];
     while (true) {
@@ -620,7 +620,7 @@ async function compressWithDeflate(data) {
         if (done) break;
         chunks.push(value);
     }
-    
+
     // バイナリデータを結合
     const compressedData = new Uint8Array(chunks.reduce((acc, chunk) => acc + chunk.length, 0));
     let offset = 0;
@@ -628,7 +628,7 @@ async function compressWithDeflate(data) {
         compressedData.set(chunk, offset);
         offset += chunk.length;
     }
-    
+
     // 高効率URLセーフBase64エンコード
     return binaryToUrlSafeBase64(compressedData);
 }
@@ -638,12 +638,12 @@ async function decompressWithDeflate(encodedData) {
     const stream = new DecompressionStream('deflate');
     const writer = stream.writable.getWriter();
     const reader = stream.readable.getReader();
-    
+
     // エンコードされたデータをバイナリに変換
     const compressedData = urlSafeBase64ToBinary(encodedData);
     await writer.write(compressedData);
     await writer.close();
-    
+
     // 解凍データを読み取り
     const chunks = [];
     while (true) {
@@ -651,7 +651,7 @@ async function decompressWithDeflate(encodedData) {
         if (done) break;
         chunks.push(value);
     }
-    
+
     // バイナリデータを結合
     const decompressedData = new Uint8Array(chunks.reduce((acc, chunk) => acc + chunk.length, 0));
     let offset = 0;
@@ -659,7 +659,7 @@ async function decompressWithDeflate(encodedData) {
         decompressedData.set(chunk, offset);
         offset += chunk.length;
     }
-    
+
     // テキストに変換
     const decoder = new TextDecoder();
     return decoder.decode(decompressedData);
