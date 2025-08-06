@@ -610,13 +610,18 @@ function urlSafeBase64ToBinary(encoded) {
 
 // CompressionStreamで圧縮
 async function compressWithDeflate(data) {
+    console.log('compressWithDeflate開始, データ長:', data.length);
+    
     // CompressionStreamのサポート確認
     if (!window.CompressionStream) {
         console.warn('CompressionStreamがサポートされていません。Base64エンコードを使用します。');
-        return binaryToUrlSafeBase64(new TextEncoder().encode(data));
+        const result = binaryToUrlSafeBase64(new TextEncoder().encode(data));
+        console.log('フォールバックBase64エンコード完了, 結果長:', result.length);
+        return result;
     }
 
     try {
+        console.log('CompressionStream開始');
         const stream = new CompressionStream('deflate');
         const writer = stream.writable.getWriter();
         const reader = stream.readable.getReader();
@@ -624,8 +629,10 @@ async function compressWithDeflate(data) {
         // データを書き込み
         const encoder = new TextEncoder();
         const chunk = encoder.encode(data);
+        console.log('データ書き込み開始, バイト長:', chunk.length);
         await writer.write(chunk);
         await writer.close();
+        console.log('データ書き込み完了');
 
         // 圧縮データを読み取り
         const chunks = [];
@@ -634,6 +641,7 @@ async function compressWithDeflate(data) {
             if (done) break;
             chunks.push(value);
         }
+        console.log('圧縮データ読み取り完了, チャンク数:', chunks.length);
 
         // バイナリデータを結合
         const compressedData = new Uint8Array(chunks.reduce((acc, chunk) => acc + chunk.length, 0));
@@ -642,13 +650,18 @@ async function compressWithDeflate(data) {
             compressedData.set(chunk, offset);
             offset += chunk.length;
         }
+        console.log('バイナリデータ結合完了, 圧縮データ長:', compressedData.length);
 
         // 高効率URLセーフBase64エンコード
-        return binaryToUrlSafeBase64(compressedData);
+        const result = binaryToUrlSafeBase64(compressedData);
+        console.log('URLセーフBase64エンコード完了, 結果長:', result.length);
+        return result;
     } catch (error) {
         console.error('CompressionStreamエラー:', error);
         // フォールバック: 単純なBase64エンコード
-        return binaryToUrlSafeBase64(new TextEncoder().encode(data));
+        const result = binaryToUrlSafeBase64(new TextEncoder().encode(data));
+        console.log('エラー後のフォールバックBase64エンコード完了, 結果長:', result.length);
+        return result;
     }
 }
 
