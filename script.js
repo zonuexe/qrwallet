@@ -288,7 +288,6 @@ function saveToHistory() {
 // 圧縮情報を表示
 function showCompressionInfo() {
     const url = new URL(window.location);
-    const compression = url.searchParams.get('compression');
     const historyParam = url.searchParams.get('history');
 
     if (historyParam) {
@@ -297,10 +296,7 @@ function showCompressionInfo() {
         const compressionRatio = ((1 - compressedSize / originalSize) * 100).toFixed(1);
 
         console.log(`圧縮情報: 元サイズ ${originalSize}バイト → 圧縮後 ${compressedSize}バイト (圧縮率: ${compressionRatio}%)`);
-
-        if (compression === 'lzma') {
-            console.log('LZMA圧縮 + 高効率URLセーフエンコードを使用しています');
-        }
+        console.log('LZMA圧縮 + 高効率URLセーフエンコードを使用しています');
     }
 }
 
@@ -406,7 +402,6 @@ function updateURL() {
             const compressedData = binaryToUrlSafe(result);
             const url = new URL(window.location);
             url.searchParams.set('history', compressedData);
-            url.searchParams.set('compression', 'lzma');
             window.history.replaceState({}, '', url);
             console.log('LZMA圧縮でURLを更新しました');
         });
@@ -477,25 +472,22 @@ function urlSafeToBinary(encoded) {
 function loadHistoryFromURL() {
     const url = new URL(window.location);
     const encodedData = url.searchParams.get('history');
-    const compression = url.searchParams.get('compression');
 
     if (!encodedData) return;
 
     try {
-        if (compression === 'lzma') {
-            // LZMA解凍を実行
-            const compressedData = urlSafeToBinary(encodedData);
-            LZMA.decompress(compressedData, function (result, error) {
-                if (error) {
-                    console.error('LZMA解凍エラー:', error);
-                    return;
-                }
-                // 解凍結果をJSONとして解析
-                const historyData = JSON.parse(result);
-                restoreHistory(historyData);
-                console.log('LZMA解凍で履歴を読み込みました:', historyData.length, '件');
-            });
-        }
+        // LZMA解凍を実行
+        const compressedData = urlSafeToBinary(encodedData);
+        LZMA.decompress(compressedData, function (result, error) {
+            if (error) {
+                console.error('LZMA解凍エラー:', error);
+                return;
+            }
+            // 解凍結果をJSONとして解析
+            const historyData = JSON.parse(result);
+            restoreHistory(historyData);
+            console.log('LZMA解凍で履歴を読み込みました:', historyData.length, '件');
+        });
     } catch (error) {
         console.error('履歴読み込みエラー:', error);
     }
