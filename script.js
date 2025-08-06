@@ -267,19 +267,14 @@ async function copyQRCode() {
 function saveToHistory() {
     if (!currentQRData) return;
 
-    const historyItem = {
-        id: Date.now(),
-        data: currentQRData
-    };
-
-    qrHistory.unshift(historyItem);
+    qrHistory.unshift(currentQRData);
     updateHistoryDisplay();
     updateURL();
 
     // 履歴に保存ボタンを無効化
     saveToHistoryBtn.disabled = true;
 
-    console.log('履歴に保存されました:', historyItem);
+    console.log('履歴に保存されました:', currentQRData);
 
     // 圧縮情報を表示
     showCompressionInfo();
@@ -291,7 +286,7 @@ function showCompressionInfo() {
     const historyParam = url.searchParams.get('history');
 
     if (historyParam) {
-        const originalSize = JSON.stringify(qrHistory.map(item => ({ d: item.data }))).length;
+        const originalSize = JSON.stringify(qrHistory).length;
         const compressedSize = historyParam.length;
         const compressionRatio = ((1 - compressedSize / originalSize) * 100).toFixed(1);
 
@@ -319,15 +314,15 @@ function updateHistoryDisplay() {
     }
 
     shareHistoryBtn.disabled = false;
-    historyList.innerHTML = qrHistory.map(item => `
-        <div class="history-item" data-id="${item.id}">
+    historyList.innerHTML = qrHistory.map((item, index) => `
+        <div class="history-item" data-index="${index}">
             <div class="history-item-content">
-                <div class="history-item-text">${escapeHtml(item.data)}</div>
+                <div class="history-item-text">${escapeHtml(item)}</div>
             </div>
             <div class="history-item-actions">
-                <button class="btn-regenerate" onclick="regenerateFromHistory('${item.id}')">再生成</button>
-                <button class="btn-copy" onclick="copyHistoryItem('${item.id}')">コピー</button>
-                <button class="btn-delete" onclick="deleteHistoryItem('${item.id}')">削除</button>
+                <button class="btn-regenerate" onclick="regenerateFromHistory(${index})">再生成</button>
+                <button class="btn-copy" onclick="copyHistoryItem(${index})">コピー</button>
+                <button class="btn-delete" onclick="deleteHistoryItem(${index})">削除</button>
             </div>
         </div>
     `).join('');
@@ -341,23 +336,23 @@ function escapeHtml(text) {
 }
 
 // 履歴から再生成
-function regenerateFromHistory(id) {
-    const item = qrHistory.find(item => item.id == id);
-    if (item) {
-        qrInput.value = item.data;
+function regenerateFromHistory(index) {
+    if (index >= 0 && index < qrHistory.length) {
+        const item = qrHistory[index];
+        qrInput.value = item;
         generateQRCode();
-        currentQRData = item.data;
+        currentQRData = item;
         // 履歴から再生成した場合は、既に履歴に存在するので保存ボタンを無効化
         saveToHistoryBtn.disabled = true;
     }
 }
 
 // 履歴アイテムをコピー
-async function copyHistoryItem(id) {
-    const item = qrHistory.find(item => item.id == id);
-    if (item) {
+async function copyHistoryItem(index) {
+    if (index >= 0 && index < qrHistory.length) {
+        const item = qrHistory[index];
         try {
-            await navigator.clipboard.writeText(item.data);
+            await navigator.clipboard.writeText(item);
             alert('テキストがクリップボードにコピーされました');
         } catch (error) {
             console.error('コピーに失敗しました:', error);
@@ -367,10 +362,12 @@ async function copyHistoryItem(id) {
 }
 
 // 履歴アイテムを削除
-function deleteHistoryItem(id) {
-    qrHistory = qrHistory.filter(item => item.id != id);
-    updateHistoryDisplay();
-    updateURL();
+function deleteHistoryItem(index) {
+    if (index >= 0 && index < qrHistory.length) {
+        qrHistory.splice(index, 1);
+        updateHistoryDisplay();
+        updateURL();
+    }
 }
 
 // URLを更新（履歴をLZMA圧縮してエンコード）
@@ -385,9 +382,7 @@ function updateURL() {
 
     try {
         // 履歴データをJSONに変換
-        const historyData = qrHistory.map(item => ({
-            d: item.data
-        }));
+        const historyData = qrHistory.map(item => item);
 
         const jsonData = JSON.stringify(historyData);
 
@@ -497,10 +492,7 @@ function loadHistoryFromURL() {
 
 // 履歴を復元
 function restoreHistory(historyData) {
-    qrHistory = historyData.map(item => ({
-        id: Date.now() + Math.random(),
-        data: item.d
-    }));
+    qrHistory = historyData;
 
     updateHistoryDisplay();
 }
