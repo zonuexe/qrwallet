@@ -12,6 +12,13 @@ const qrCode = document.getElementById('qrCode');
 const downloadQRBtn = document.getElementById('downloadQR');
 const copyQRBtn = document.getElementById('copyQR');
 
+// QRコード生成オプションの要素
+const qrSize = document.getElementById('qrSize');
+const qrMargin = document.getElementById('qrMargin');
+const qrErrorLevel = document.getElementById('qrErrorLevel');
+const qrDarkColor = document.getElementById('qrDarkColor');
+const qrLightColor = document.getElementById('qrLightColor');
+
 // カメラ関連の変数
 let stream = null;
 let scanning = false;
@@ -148,25 +155,32 @@ function playSuccessSound() {
 // QRコード生成
 function generateQRCode() {
     const text = qrInput.value.trim();
-
+    
     if (!text) {
         alert('テキストを入力してください');
         return;
     }
-
+    
     // 既存のQRコードをクリア
     qrCode.innerHTML = '';
-
+    
+    // オプション値を取得
+    const size = parseInt(qrSize.value);
+    const margin = parseInt(qrMargin.value);
+    const errorLevel = qrErrorLevel.value;
+    const darkColor = qrDarkColor.value;
+    const lightColor = qrLightColor.value;
+    
     // QRコードを生成
     QRCode.toCanvas(qrCode, text, {
-        width: 200,
-        height: 200,
-        margin: 2,
+        width: size,
+        height: size,
+        margin: margin,
         color: {
-            dark: '#000000',
-            light: '#FFFFFF'
+            dark: darkColor,
+            light: lightColor
         },
-        errorCorrectionLevel: 'M'
+        errorCorrectionLevel: errorLevel
     }, function (error) {
         if (error) {
             console.error('QRコード生成エラー:', error);
@@ -175,7 +189,7 @@ function generateQRCode() {
             // ボタンを有効化
             downloadQRBtn.disabled = false;
             copyQRBtn.disabled = false;
-
+            
             // 成功メッセージ
             console.log('QRコードが生成されました');
         }
@@ -234,6 +248,20 @@ qrInput.addEventListener('keypress', (e) => {
     }
 });
 
+// QRコードオプション変更時の自動再生成
+function setupQRCodeOptions() {
+    const options = [qrSize, qrMargin, qrErrorLevel, qrDarkColor, qrLightColor];
+    
+    options.forEach(option => {
+        option.addEventListener('change', () => {
+            // QRコードが既に生成されている場合のみ再生成
+            if (qrCode.querySelector('canvas')) {
+                generateQRCode();
+            }
+        });
+    });
+}
+
 // ページ読み込み時の初期化
 document.addEventListener('DOMContentLoaded', () => {
     // カメラの利用可能性をチェック
@@ -242,12 +270,15 @@ document.addEventListener('DOMContentLoaded', () => {
         scanStatus.className = 'error';
         startCameraBtn.disabled = true;
     }
-
+    
     // QRコード生成ライブラリの読み込み確認
     if (typeof QRCode === 'undefined') {
         console.error('QRCodeライブラリが読み込まれていません');
         generateQRBtn.disabled = true;
     }
+    
+    // QRコードオプションの設定
+    setupQRCodeOptions();
 });
 
 // ページ離脱時のクリーンアップ

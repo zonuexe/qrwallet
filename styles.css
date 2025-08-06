@@ -29,7 +29,7 @@ header {
 header h1 {
     font-size: 2.5rem;
     margin-bottom: 10px;
-    text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
 }
 
 header p {
@@ -58,7 +58,7 @@ header p {
     background: white;
     border-radius: 20px;
     padding: 30px;
-    box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
     backdrop-filter: blur(10px);
 }
 
@@ -78,7 +78,7 @@ header p {
     margin: 0 auto 20px;
     border-radius: 15px;
     overflow: hidden;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
 }
 
 #video {
@@ -106,7 +106,7 @@ header p {
     height: 200px;
     border: 3px solid #667eea;
     border-radius: 15px;
-    box-shadow: 0 0 0 9999px rgba(0,0,0,0.3);
+    box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.3);
 }
 
 .scan-area::before {
@@ -127,8 +127,13 @@ header p {
 }
 
 @keyframes scan {
-    0% { transform: translateX(-100%); }
-    100% { transform: translateX(100%); }
+    0% {
+        transform: translateX(-100%);
+    }
+
+    100% {
+        transform: translateX(100%);
+    }
 }
 
 /* カメラコントロール */
@@ -166,7 +171,7 @@ header p {
 .btn-secondary {
     background: #e2e8f0;
     color: #4a5568;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
 }
 
 .btn-secondary:hover {
@@ -237,6 +242,73 @@ header p {
     box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
 }
 
+/* QRコード生成オプション */
+.qr-options {
+    background: #f7fafc;
+    border-radius: 15px;
+    padding: 20px;
+    margin-bottom: 25px;
+    border: 1px solid #e2e8f0;
+}
+
+.qr-options h3 {
+    color: #2d3748;
+    margin-bottom: 15px;
+    font-size: 1.1rem;
+    text-align: center;
+}
+
+.options-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 15px;
+}
+
+.option-group {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.option-group label {
+    font-weight: 600;
+    color: #4a5568;
+    font-size: 0.9rem;
+}
+
+.option-group select,
+.option-group input[type="color"] {
+    padding: 8px 12px;
+    border: 2px solid #e2e8f0;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    background: white;
+    transition: border-color 0.3s ease;
+}
+
+.option-group select:focus,
+.option-group input[type="color"]:focus {
+    outline: none;
+    border-color: #667eea;
+    box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.1);
+}
+
+.option-group input[type="color"] {
+    height: 40px;
+    cursor: pointer;
+    padding: 4px;
+}
+
+/* カラーピッカーのカスタマイズ */
+.option-group input[type="color"]::-webkit-color-swatch-wrapper {
+    padding: 0;
+}
+
+.option-group input[type="color"]::-webkit-color-swatch {
+    border: none;
+    border-radius: 6px;
+}
+
 .qr-display {
     text-align: center;
 }
@@ -246,7 +318,7 @@ header p {
     background: white;
     padding: 20px;
     border-radius: 15px;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
     margin-bottom: 20px;
     min-height: 200px;
     display: flex;
@@ -278,22 +350,22 @@ footer {
     .container {
         padding: 15px;
     }
-    
+
     header h1 {
         font-size: 2rem;
     }
-    
+
     .camera-section,
     .generator-section {
         padding: 20px;
     }
-    
+
     .camera-controls,
     .qr-controls {
         flex-direction: column;
         align-items: center;
     }
-    
+
     .btn {
         width: 100%;
         max-width: 200px;
@@ -306,6 +378,7 @@ footer {
         opacity: 0;
         transform: translateY(20px);
     }
+
     to {
         opacity: 1;
         transform: translateY(0);
@@ -328,4 +401,4 @@ footer {
     color: #e53e3e;
     background: #fff5f5;
     border-color: #e53e3e;
-} 
+}
