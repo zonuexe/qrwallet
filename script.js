@@ -282,6 +282,30 @@ function saveToHistory() {
     saveToHistoryBtn.disabled = true;
 
     console.log('履歴に保存されました:', historyItem);
+
+    // 圧縮情報を表示
+    showCompressionInfo();
+}
+
+// 圧縮情報を表示
+function showCompressionInfo() {
+    const url = new URL(window.location);
+    const compression = url.searchParams.get('compression');
+    const historyParam = url.searchParams.get('history');
+
+    if (historyParam) {
+        const originalSize = JSON.stringify(qrHistory.map(item => ({ d: item.data, t: item.timestamp }))).length;
+        const compressedSize = historyParam.length;
+        const compressionRatio = ((1 - compressedSize / originalSize) * 100).toFixed(1);
+
+        console.log(`圧縮情報: 元サイズ ${originalSize}バイト → 圧縮後 ${compressedSize}バイト (圧縮率: ${compressionRatio}%)`);
+
+        if (compression === 'lzma') {
+            console.log('LZMA圧縮を使用しています');
+        } else {
+            console.log('Base64エンコードを使用しています');
+        }
+    }
 }
 
 // 履歴をクリア
@@ -358,7 +382,7 @@ function deleteHistoryItem(id) {
     updateURL();
 }
 
-// URLを更新（履歴をXZ圧縮してエンコード）
+// URLを更新（履歴をLZMA圧縮してエンコード）
 function updateURL() {
     if (qrHistory.length === 0) {
         // 履歴がない場合はURLパラメータを削除
@@ -377,45 +401,98 @@ function updateURL() {
 
         const jsonData = JSON.stringify(historyData);
 
-        // Base64エンコード（簡易的な圧縮として）
-        const encodedData = btoa(unescape(encodeURIComponent(jsonData)));
-
-        // URLに設定
-        const url = new URL(window.location);
-        url.searchParams.set('history', encodedData);
-        window.history.replaceState({}, '', url);
-
-        console.log('URLを更新しました');
+        // LZMA圧縮を使用
+        if (typeof LZMA !== 'undefined') {
+            // LZMA圧縮を実行
+            LZMA.compress(jsonData, 9, function (result, error) {
+                if (error) {
+                    console.error('LZMA圧縮エラー:', error);
+                    // 圧縮に失敗した場合はBase64エンコードを使用
+                    fallbackToBase64(jsonData);
+                } else {
+                    // 圧縮結果をBase64エンコード
+                    const compressedData = btoa(String.fromCharCode.apply(null, result));
+                    const url = new URL(window.location);
+                    url.searchParams.set('history', compressedData);
+                    url.searchParams.set('compression', 'lzma');
+                    window.history.replaceState({}, '', url);
+                    console.log('LZMA圧縮でURLを更新しました');
+                }
+            });
+        } else {
+            // LZMAライブラリが利用できない場合はBase64エンコードを使用
+            fallbackToBase64(jsonData);
+        }
     } catch (error) {
         console.error('URL更新エラー:', error);
     }
+}
+
+// Base64エンコードのフォールバック
+function fallbackToBase64(jsonData) {
+    const encodedData = btoa(unescape(encodeURIComponent(jsonData)));
+    const url = new URL(window.location);
+    url.searchParams.set('history', encodedData);
+    url.searchParams.delete('compression');
+    window.history.replaceState({}, '', url);
+    console.log('Base64エンコードでURLを更新しました');
 }
 
 // URLから履歴を読み込み
 function loadHistoryFromURL() {
     const url = new URL(window.location);
     const encodedData = url.searchParams.get('history');
+    const compression = url.searchParams.get('compression');
 
     if (!encodedData) return;
 
     try {
-        // Base64デコード
-        const jsonData = decodeURIComponent(escape(atob(encodedData)));
-        const historyData = JSON.parse(jsonData);
-
-        // 履歴を復元
-        qrHistory = historyData.map(item => ({
-            id: Date.now() + Math.random(),
-            data: item.d,
-            timestamp: item.t,
-            date: new Date()
-        }));
-
-        updateHistoryDisplay();
-        console.log('URLから履歴を読み込みました:', qrHistory.length, '件');
+        if (compression === 'lzma' && typeof LZMA !== 'undefined') {
+            // LZMA解凍を実行
+            const compressedData = new Uint8Array(atob(encodedData).split('').map(char => char.charCodeAt(0)));
+            LZMA.decompress(compressedData, function (result, error) {
+                if (error) {
+                    console.error('LZMA解凍エラー:', error);
+                    // 解凍に失敗した場合はBase64デコードを試行
+                    tryBase64Decode(encodedData);
+                } else {
+                    // 解凍結果をJSONとして解析
+                    const historyData = JSON.parse(result);
+                    restoreHistory(historyData);
+                    console.log('LZMA解凍で履歴を読み込みました:', historyData.length, '件');
+                }
+            });
+        } else {
+            // Base64デコード
+            tryBase64Decode(encodedData);
+        }
     } catch (error) {
         console.error('履歴読み込みエラー:', error);
     }
+}
+
+// Base64デコードのフォールバック
+function tryBase64Decode(encodedData) {
+    try {
+        const jsonData = decodeURIComponent(escape(atob(encodedData)));
+        const historyData = JSON.parse(jsonData);
+        restoreHistory(historyData);
+        console.log('Base64デコードで履歴を読み込みました:', historyData.length, '件');
+    } catch (error) {
+        console.error('Base64デコードエラー:', error);
+    }
+}
+
+// 履歴を復元
+function restoreHistory(historyData) {
+    qrHistory = historyData.map(item => ({
+        id: Date.now() + Math.random(),
+        data: item.d,
+        timestamp: item.t,
+        date: new Date()
+    }));
+
+    updateHistoryDisplay();
 }
 
 // イベントリスナーの設定
