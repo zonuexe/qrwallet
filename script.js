@@ -382,9 +382,7 @@ function updateURL() {
 
     try {
         // 履歴データをJSONに変換
-        const historyData = qrHistory.map(item => item);
-
-        const jsonData = JSON.stringify(historyData);
+        const jsonData = JSON.stringify(qrHistory);
 
         // LZMA圧縮を実行
         LZMA.compress(jsonData, 9, function (result, error) {
