@@ -214,6 +214,12 @@ function generateQRCode() {
             downloadQRBtn.disabled = false;
             copyQRBtn.disabled = false;
 
+            // 履歴保存ボタンを有効化
+            if (text) {
+                currentQRData = text;
+                saveToHistoryBtn.disabled = false;
+            }
+
             // 成功メッセージ
             console.log('QRコードが生成されました');
         }
@@ -326,7 +332,8 @@ function regenerateFromHistory(id) {
         qrInput.value = item.data;
         generateQRCode();
         currentQRData = item.data;
-        saveToHistoryBtn.disabled = false;
+        // 履歴から再生成した場合は、既に履歴に存在するので保存ボタンを無効化
+        saveToHistoryBtn.disabled = true;
     }
 }
 
@@ -438,6 +445,18 @@ qrInput.addEventListener('keypress', (e) => {
     }
 });
 
+// テキスト入力時の処理
+qrInput.addEventListener('input', () => {
+    const text = qrInput.value.trim();
+    if (text) {
+        currentQRData = text;
+        saveToHistoryBtn.disabled = false;
+    } else {
+        currentQRData = null;
+        saveToHistoryBtn.disabled = true;
+    }
+});
+
 // QRコードオプション変更時の自動再生成
 function setupQRCodeOptions() {
     const options = [qrSize, qrMargin, qrErrorLevel, qrDarkColor, qrLightColor];
@@ -469,6 +488,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // URLから履歴を読み込み
     loadHistoryFromURL();
+
+    // 初期状態で履歴保存ボタンを無効化
+    saveToHistoryBtn.disabled = true;
 });
 
 // QRCodeライブラリの読み込み確認
