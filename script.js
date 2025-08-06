@@ -57,7 +57,6 @@ async function startCamera() {
         });
 
     } catch (error) {
-        console.error('カメラの開始に失敗しました:', error);
         scanStatus.textContent = 'カメラへのアクセスが拒否されました。ブラウザの設定を確認してください。';
         scanStatus.className = 'error';
     }
@@ -207,7 +206,6 @@ function generateQRCode() {
         errorCorrectionLevel: errorLevel
     }, function (error) {
         if (error) {
-            console.error('QRコード生成エラー:', error);
             alert('QRコードの生成に失敗しました');
         } else {
             // ボタンを有効化
@@ -252,12 +250,10 @@ async function copyQRCode() {
                 ]);
                 alert('QRコードがクリップボードにコピーされました');
             } catch (error) {
-                console.error('クリップボードへのコピーに失敗しました:', error);
                 alert('クリップボードへのコピーに失敗しました');
             }
         });
     } catch (error) {
-        console.error('QRコードのコピーに失敗しました:', error);
         alert('QRコードのコピーに失敗しました');
     }
 }
@@ -350,7 +346,6 @@ async function copyHistoryItem(index) {
             await navigator.clipboard.writeText(item);
             alert('テキストがクリップボードにコピーされました');
         } catch (error) {
-            console.error('コピーに失敗しました:', error);
             alert('コピーに失敗しました');
         }
     }
@@ -486,11 +481,8 @@ document.addEventListener('DOMContentLoaded', () => {
 // QRCodeライブラリの読み込み確認
 function checkQRCodeLibrary() {
     if (typeof QRCode === 'undefined') {
-        console.error('QRCodeライブラリが読み込まれていません');
-        // 少し待ってから再チェック
         setTimeout(() => {
             if (typeof QRCode === 'undefined') {
-                console.error('QRCodeライブラリの読み込みに失敗しました');
                 generateQRBtn.disabled = true;
                 generateQRBtn.textContent = 'ライブラリ読み込みエラー';
             } else {
@@ -508,15 +500,7 @@ window.addEventListener('beforeunload', () => {
     }
 });
 
-// エラーハンドリング
-window.addEventListener('error', (e) => {
-    console.error('アプリケーションエラー:', e.error);
-});
 
-// 未処理のPromise拒否をキャッチ
-window.addEventListener('unhandledrejection', (e) => {
-    console.error('未処理のPromise拒否:', e.reason);
-});
 
 // 高効率URLセーフBase64エンコーディング
 // 使用文字: A-Z, a-z, 0-9, -, _, ~, ., :, @, !, $, &, ', (, ), *, +, ,, ;, ?, #, [, ]
