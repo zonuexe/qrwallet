@@ -155,28 +155,28 @@ function playSuccessSound() {
 // QRコード生成
 function generateQRCode() {
     const text = qrInput.value.trim();
-    
+
     if (!text) {
         alert('テキストを入力してください');
         return;
     }
-    
+
     // QRCodeライブラリの存在確認
     if (typeof QRCode === 'undefined') {
         alert('QRコード生成ライブラリが読み込まれていません。ページを再読み込みしてください。');
         return;
     }
-    
+
     // 既存のQRコードをクリア
     qrCode.innerHTML = '';
-    
+
     // オプション値を取得
     const size = parseInt(qrSize.value);
     const margin = parseInt(qrMargin.value);
     const errorLevel = qrErrorLevel.value;
     const darkColor = qrDarkColor.value;
     const lightColor = qrLightColor.value;
-    
+
     // QRコードを生成
     QRCode.toCanvas(qrCode, text, {
         width: size,
@@ -195,7 +195,7 @@ function generateQRCode() {
             // ボタンを有効化
             downloadQRBtn.disabled = false;
             copyQRBtn.disabled = false;
-            
+
             // 成功メッセージ
             console.log('QRコードが生成されました');
         }
