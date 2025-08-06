@@ -373,7 +373,7 @@ function deleteHistoryItem(index) {
 // URLを更新（履歴をLZMA圧縮してエンコード）
 function updateURL() {
     console.log('updateURL called, qrHistory length:', qrHistory.length);
-    
+
     if (qrHistory.length === 0) {
         // 履歴が空の場合はURLから履歴パラメータを削除
         const url = new URL(window.location);
@@ -390,9 +390,12 @@ function updateURL() {
 
         // CompressionStreamで圧縮
         compressWithDeflate(jsonData).then(compressedData => {
+            console.log('圧縮完了, 圧縮データ長:', compressedData.length);
             const url = new URL(window.location);
             url.search = '?' + compressedData;
+            console.log('URL更新前:', window.location.href);
             window.history.replaceState({}, '', url);
+            console.log('URL更新後:', window.location.href);
             console.log('Deflate圧縮でURLを更新しました:', url.href);
         }).catch(error => {
             console.error('圧縮エラー:', error);
@@ -607,64 +610,90 @@ function urlSafeBase64ToBinary(encoded) {
 
 // CompressionStreamで圧縮
 async function compressWithDeflate(data) {
-    const stream = new CompressionStream('deflate');
-    const writer = stream.writable.getWriter();
-    const reader = stream.readable.getReader();
-
-    // データを書き込み
-    const encoder = new TextEncoder();
-    const chunk = encoder.encode(data);
-    await writer.write(chunk);
-    await writer.close();
-
-    // 圧縮データを読み取り
-    const chunks = [];
-    while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        chunks.push(value);
+    // CompressionStreamのサポート確認
+    if (!window.CompressionStream) {
+        console.warn('CompressionStreamがサポートされていません。Base64エンコードを使用します。');
+        return binaryToUrlSafeBase64(new TextEncoder().encode(data));
     }
 
-    // バイナリデータを結合
-    const compressedData = new Uint8Array(chunks.reduce((acc, chunk) => acc + chunk.length, 0));
-    let offset = 0;
-    for (const chunk of chunks) {
-        compressedData.set(chunk, offset);
-        offset += chunk.length;
-    }
+    try {
+        const stream = new CompressionStream('deflate');
+        const writer = stream.writable.getWriter();
+        const reader = stream.readable.getReader();
 
-    // 高効率URLセーフBase64エンコード
-    return binaryToUrlSafeBase64(compressedData);
+        // データを書き込み
+        const encoder = new TextEncoder();
+        const chunk = encoder.encode(data);
+        await writer.write(chunk);
+        await writer.close();
+
+        // 圧縮データを読み取り
+        const chunks = [];
+        while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            chunks.push(value);
+        }
+
+        // バイナリデータを結合
+        const compressedData = new Uint8Array(chunks.reduce((acc, chunk) => acc + chunk.length, 0));
+        let offset = 0;
+        for (const chunk of chunks) {
+            compressedData.set(chunk, offset);
+            offset += chunk.length;
+        }
+
+        // 高効率URLセーフBase64エンコード
+        return binaryToUrlSafeBase64(compressedData);
+    } catch (error) {
+        console.error('CompressionStreamエラー:', error);
+        // フォールバック: 単純なBase64エンコード
+        return binaryToUrlSafeBase64(new TextEncoder().encode(data));
+    }
 }
 
 // CompressionStreamで解凍
 async function decompressWithDeflate(encodedData) {
-    const stream = new DecompressionStream('deflate');
-    const writer = stream.writable.getWriter();
-    const reader = stream.readable.getReader();
-
-    // エンコードされたデータをバイナリに変換
-    const compressedData = urlSafeBase64ToBinary(encodedData);
-    await writer.write(compressedData);
-    await writer.close();
-
-    // 解凍データを読み取り
-    const chunks = [];
-    while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        chunks.push(value);
+    // CompressionStreamのサポート確認
+    if (!window.DecompressionStream) {
+        console.warn('DecompressionStreamがサポートされていません。Base64デコードを使用します。');
+        const binaryData = urlSafeBase64ToBinary(encodedData);
+        return new TextDecoder().decode(binaryData);
     }
 
-    // バイナリデータを結合
-    const decompressedData = new Uint8Array(chunks.reduce((acc, chunk) => acc + chunk.length, 0));
-    let offset = 0;
-    for (const chunk of chunks) {
-        decompressedData.set(chunk, offset);
-        offset += chunk.length;
-    }
+    try {
+        const stream = new DecompressionStream('deflate');
+        const writer = stream.writable.getWriter();
+        const reader = stream.readable.getReader();
 
-    // テキストに変換
-    const decoder = new TextDecoder();
-    return decoder.decode(decompressedData);
+        // エンコードされたデータをバイナリに変換
+        const compressedData = urlSafeBase64ToBinary(encodedData);
+        await writer.write(compressedData);
+        await writer.close();
+
+        // 解凍データを読み取り
+        const chunks = [];
+        while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            chunks.push(value);
+        }
+
+        // バイナリデータを結合
+        const decompressedData = new Uint8Array(chunks.reduce((acc, chunk) => acc + chunk.length, 0));
+        let offset = 0;
+        for (const chunk of chunks) {
+            decompressedData.set(chunk, offset);
+            offset += chunk.length;
+        }
+
+        // テキストに変換
+        const decoder = new TextDecoder();
+        return decoder.decode(decompressedData);
+    } catch (error) {
+        console.error('DecompressionStreamエラー:', error);
+        // フォールバック: 単純なBase64デコード
+        const binaryData = urlSafeBase64ToBinary(encodedData);
+        return new TextDecoder().decode(binaryData);
+    }
 } 
