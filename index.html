@@ -1,11 +1,13 @@
 <!DOCTYPE html>
 <html lang="ja">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>QRコード リーダー & ジェネレーター</title>
     <link rel="stylesheet" href="styles.css">
 </head>
+
 <body>
     <div class="container">
         <header>
@@ -45,7 +47,7 @@
                         <textarea id="qrInput" placeholder="QRコードに変換したいテキストを入力してください..."></textarea>
                         <button id="generateQR" class="btn btn-primary">QRコード生成</button>
                     </div>
-                    
+
                     <!-- QRコード生成オプション -->
                     <div class="qr-options">
                         <h3>生成オプション</h3>
@@ -60,7 +62,7 @@
                                     <option value="400">400px</option>
                                 </select>
                             </div>
-                            
+
                             <div class="option-group">
                                 <label for="qrMargin">マージン:</label>
                                 <select id="qrMargin">
@@ -70,7 +72,7 @@
                                     <option value="4">大</option>
                                 </select>
                             </div>
-                            
+
                             <div class="option-group">
                                 <label for="qrErrorLevel">エラー訂正レベル:</label>
                                 <select id="qrErrorLevel">
@@ -80,19 +82,19 @@
                                     <option value="H">H (30%)</option>
                                 </select>
                             </div>
-                            
+
                             <div class="option-group">
                                 <label for="qrDarkColor">前景色:</label>
                                 <input type="color" id="qrDarkColor" value="#000000">
                             </div>
-                            
+
                             <div class="option-group">
                                 <label for="qrLightColor">背景色:</label>
                                 <input type="color" id="qrLightColor" value="#FFFFFF">
                             </div>
                         </div>
                     </div>
-                    
+
                     <div class="qr-display">
                         <div id="qrCode" class="qr-code-container"></div>
                         <div class="qr-controls">
@@ -113,4 +115,5 @@
     <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
     <script src="script.js"></script>
 </body>
-</html> 
+
+</html>

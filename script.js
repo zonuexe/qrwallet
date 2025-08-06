@@ -161,6 +161,12 @@ function generateQRCode() {
         return;
     }
     
+    // QRCodeライブラリの存在確認
+    if (typeof QRCode === 'undefined') {
+        alert('QRコード生成ライブラリが読み込まれていません。ページを再読み込みしてください。');
+        return;
+    }
+    
     // 既存のQRコードをクリア
     qrCode.innerHTML = '';
     
@@ -251,7 +257,7 @@ qrInput.addEventListener('keypress', (e) => {
 // QRコードオプション変更時の自動再生成
 function setupQRCodeOptions() {
     const options = [qrSize, qrMargin, qrErrorLevel, qrDarkColor, qrLightColor];
-    
+
     options.forEach(option => {
         option.addEventListener('change', () => {
             // QRコードが既に生成されている場合のみ再生成
@@ -270,13 +276,14 @@ document.addEventListener('DOMContentLoaded', () => {
         scanStatus.className = 'error';
         startCameraBtn.disabled = true;
     }
-    
+
     // QRコード生成ライブラリの読み込み確認
     if (typeof QRCode === 'undefined') {
         console.error('QRCodeライブラリが読み込まれていません');
-        generateQRBtn.disabled = true;
+        // ライブラリが読み込まれていない場合でもボタンは有効のままにする
+        // 実際の生成時にエラーハンドリングを行う
     }
-    
+
     // QRコードオプションの設定
     setupQRCodeOptions();
 });
