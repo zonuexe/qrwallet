@@ -367,40 +367,19 @@ function deleteHistoryItem(index) {
 
 // URLを更新（履歴をLZMA圧縮してエンコード）
 function updateURL() {
-
     if (qrHistory.length === 0) {
-        // 履歴が空の場合はURLから履歴パラメータを削除
         const url = new URL(window.location);
         url.search = '';
         window.history.replaceState({}, '', url);
         return;
     }
 
-    try {
-        // 履歴データをJSONに変換
-        const jsonData = JSON.stringify(qrHistory);
-
-        // CompressionStreamで圧縮（タイムアウト付き）
-        const compressionPromise = compressWithDeflate(jsonData);
-        const timeoutPromise = new Promise((_, reject) => {
-            setTimeout(() => reject(new Error('圧縮タイムアウト')), 5000);
-        });
-
-        Promise.race([compressionPromise, timeoutPromise]).then(compressedData => {
-            const url = new URL(window.location);
-            url.search = '?' + compressedData;
-            window.history.replaceState({}, '', url);
-        }).catch(error => {
-            console.error('圧縮エラーまたはタイムアウト:', error);
-            // エラー時はフォールバックでBase64エンコード
-            const fallbackData = binaryToUrlSafeBase64(new TextEncoder().encode(jsonData));
-            const url = new URL(window.location);
-            url.search = '?' + fallbackData;
-            window.history.replaceState({}, '', url);
-        });
-    } catch (error) {
-        console.error('URL更新エラー:', error);
-    }
+    const jsonData = JSON.stringify(qrHistory);
+    compressWithDeflate(jsonData).then(compressedData => {
+        const url = new URL(window.location);
+        url.search = '?' + compressedData;
+        window.history.replaceState({}, '', url);
+    });
 }
 
 
@@ -410,21 +389,14 @@ function updateURL() {
 // URLから履歴を読み込み
 function loadHistoryFromURL() {
     const url = new URL(window.location);
-    const encodedData = url.search.substring(1); // ?を除いた部分
+    const encodedData = url.search.substring(1);
 
     if (!encodedData) return;
 
-    try {
-        // Deflate解凍
-        decompressWithDeflate(encodedData).then(decompressedData => {
-            const historyData = JSON.parse(decompressedData);
-            restoreHistory(historyData);
-        }).catch(error => {
-            console.error('解凍エラー:', error);
-        });
-    } catch (error) {
-        console.error('履歴読み込みエラー:', error);
-    }
+    decompressWithDeflate(encodedData).then(decompressedData => {
+        const historyData = JSON.parse(decompressedData);
+        restoreHistory(historyData);
+    });
 }
 
 
@@ -618,50 +590,30 @@ const createUpstream = (value) => {
 
 // CompressionStreamで圧縮
 async function compressWithDeflate(data) {
-
-    // CompressionStreamのサポート確認
     if (!window.CompressionStream) {
-        const result = binaryToUrlSafeBase64(textEncoder.encode(data));
-        return result;
+        return binaryToUrlSafeBase64(textEncoder.encode(data));
     }
 
-    try {
-        const upstream = createUpstream(textEncoder.encode(data));
-        const compression = new CompressionStream('deflate-raw');
-        const stream = upstream.pipeThrough(compression);
-        const compressed = await new Response(stream).arrayBuffer();
+    const upstream = createUpstream(textEncoder.encode(data));
+    const compression = new CompressionStream('deflate-raw');
+    const stream = upstream.pipeThrough(compression);
+    const compressed = await new Response(stream).arrayBuffer();
 
-        // 高効率URLセーフBase64エンコード
-        const result = binaryToUrlSafeBase64(new Uint8Array(compressed));
-        return result;
-    } catch (error) {
-        console.error('CompressionStreamエラー:', error);
-        // フォールバック: 単純なBase64エンコード
-        const result = binaryToUrlSafeBase64(textEncoder.encode(data));
-        return result;
-    }
+    return binaryToUrlSafeBase64(new Uint8Array(compressed));
 }
 
 // CompressionStreamで解凍
 async function decompressWithDeflate(encodedData) {
-    // CompressionStreamのサポート確認
     if (!window.DecompressionStream) {
         const binaryData = urlSafeBase64ToBinary(encodedData);
         return textDecoder.decode(binaryData);
     }
 
-    try {
-        const compressedData = urlSafeBase64ToBinary(encodedData);
-        const upstream = createUpstream(compressedData);
-        const decompression = new DecompressionStream('deflate-raw');
-        const stream = upstream.pipeThrough(decompression);
-        const decompressed = await new Response(stream).arrayBuffer();
+    const compressedData = urlSafeBase64ToBinary(encodedData);
+    const upstream = createUpstream(compressedData);
+    const decompression = new DecompressionStream('deflate-raw');
+    const stream = upstream.pipeThrough(decompression);
+    const decompressed = await new Response(stream).arrayBuffer();
 
-        return textDecoder.decode(decompressed);
-    } catch (error) {
-        console.error('DecompressionStreamエラー:', error);
-        // フォールバック: 単純なBase64デコード
-        const binaryData = urlSafeBase64ToBinary(encodedData);
-        return textDecoder.decode(binaryData);
-    }
+    return textDecoder.decode(decompressed);
 } 
