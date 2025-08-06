@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QRコード リーダー & ジェネレーター</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>QRコード リーダー & ジェネレーター</h1>
+            <p>カメラでQRコードを読み取って、綺麗なQRコードとして再表示します</p>
+        </header>
+
+        <main>
+            <div class="app-container">
+                <!-- カメラ読み取りセクション -->
+                <section class="camera-section">
+                    <h2>QRコード読み取り</h2>
+                    <div class="camera-container">
+                        <video id="video" autoplay muted playsinline></video>
+                        <canvas id="canvas" style="display: none;"></canvas>
+                        <div class="camera-overlay">
+                            <div class="scan-area"></div>
+                        </div>
+                    </div>
+                    <div class="camera-controls">
+                        <button id="startCamera" class="btn btn-primary">カメラ開始</button>
+                        <button id="stopCamera" class="btn btn-secondary" disabled>カメラ停止</button>
+                    </div>
+                    <div class="scan-result">
+                        <p id="scanStatus">カメラを開始してQRコードを読み取ってください</p>
+                        <div id="scannedData" class="scanned-data" style="display: none;">
+                            <h3>読み取り結果:</h3>
+                            <p id="dataText"></p>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- QRコード生成セクション -->
+                <section class="generator-section">
+                    <h2>QRコード生成</h2>
+                    <div class="input-container">
+                        <textarea id="qrInput" placeholder="QRコードに変換したいテキストを入力してください..."></textarea>
+                        <button id="generateQR" class="btn btn-primary">QRコード生成</button>
+                    </div>
+                    <div class="qr-display">
+                        <div id="qrCode" class="qr-code-container"></div>
+                        <div class="qr-controls">
+                            <button id="downloadQR" class="btn btn-secondary" disabled>ダウンロード</button>
+                            <button id="copyQR" class="btn btn-secondary" disabled>クリップボードにコピー</button>
+                        </div>
+                    </div>
+                </section>
+            </div>
+        </main>
+
+        <footer>
+            <p>&copy; 2024 QRコード リーダー & ジェネレーター</p>
+        </footer>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+    <script src="script.js"></script>
+</body>
+</html> 
