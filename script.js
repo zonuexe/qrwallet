@@ -19,10 +19,20 @@ const qrErrorLevel = document.getElementById('qrErrorLevel');
 const qrDarkColor = document.getElementById('qrDarkColor');
 const qrLightColor = document.getElementById('qrLightColor');
 
+// 履歴関連の要素
+const saveToHistoryBtn = document.getElementById('saveToHistory');
+const clearHistoryBtn = document.getElementById('clearHistory');
+const shareHistoryBtn = document.getElementById('shareHistory');
+const historyList = document.getElementById('historyList');
+
 // カメラ関連の変数
 let stream = null;
 let scanning = false;
 let lastScannedData = '';
+
+// 履歴関連の変数
+let qrHistory = [];
+let currentQRData = null;
 
 // カメラ開始
 async function startCamera() {
@@ -124,6 +134,10 @@ function handleQRCodeDetected(data) {
 
     // 自動的にQRコードを生成
     generateQRCode();
+
+    // 履歴に保存可能にする
+    currentQRData = data;
+    saveToHistoryBtn.disabled = false;
 
     // 成功音を再生（オプション）
     playSuccessSound();
@@ -243,12 +257,178 @@ async function copyQRCode() {
     }
 }
 
+// 履歴に保存
+function saveToHistory() {
+    if (!currentQRData) return;
+
+    const historyItem = {
+        id: Date.now(),
+        data: currentQRData,
+        timestamp: new Date().toLocaleString('ja-JP'),
+        date: new Date()
+    };
+
+    qrHistory.unshift(historyItem);
+    updateHistoryDisplay();
+    updateURL();
+
+    // 履歴に保存ボタンを無効化
+    saveToHistoryBtn.disabled = true;
+
+    console.log('履歴に保存されました:', historyItem);
+}
+
+// 履歴をクリア
+function clearHistory() {
+    if (confirm('履歴をすべて削除しますか？')) {
+        qrHistory = [];
+        updateHistoryDisplay();
+        updateURL();
+        console.log('履歴をクリアしました');
+    }
+}
+
+// 履歴表示を更新
+function updateHistoryDisplay() {
+    if (qrHistory.length === 0) {
+        historyList.innerHTML = '<div class="history-empty">履歴がありません</div>';
+        shareHistoryBtn.disabled = true;
+        return;
+    }
+
+    shareHistoryBtn.disabled = false;
+    historyList.innerHTML = qrHistory.map(item => `
+        <div class="history-item" data-id="${item.id}">
+            <div class="history-item-content">
+                <div class="history-item-text">${escapeHtml(item.data)}</div>
+                <div class="history-item-timestamp">${item.timestamp}</div>
+            </div>
+            <div class="history-item-actions">
+                <button class="btn-regenerate" onclick="regenerateFromHistory('${item.id}')">再生成</button>
+                <button class="btn-copy" onclick="copyHistoryItem('${item.id}')">コピー</button>
+                <button class="btn-delete" onclick="deleteHistoryItem('${item.id}')">削除</button>
+            </div>
+        </div>
+    `).join('');
+}
+
+// HTMLエスケープ
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+// 履歴から再生成
+function regenerateFromHistory(id) {
+    const item = qrHistory.find(item => item.id == id);
+    if (item) {
+        qrInput.value = item.data;
+        generateQRCode();
+        currentQRData = item.data;
+        saveToHistoryBtn.disabled = false;
+    }
+}
+
+// 履歴アイテムをコピー
+async function copyHistoryItem(id) {
+    const item = qrHistory.find(item => item.id == id);
+    if (item) {
+        try {
+            await navigator.clipboard.writeText(item.data);
+            alert('テキストがクリップボードにコピーされました');
+        } catch (error) {
+            console.error('コピーに失敗しました:', error);
+            alert('コピーに失敗しました');
+        }
+    }
+}
+
+// 履歴アイテムを削除
+function deleteHistoryItem(id) {
+    qrHistory = qrHistory.filter(item => item.id != id);
+    updateHistoryDisplay();
+    updateURL();
+}
+
+// URLを更新（履歴をXZ圧縮してエンコード）
+function updateURL() {
+    if (qrHistory.length === 0) {
+        // 履歴がない場合はURLパラメータを削除
+        const url = new URL(window.location);
+        url.searchParams.delete('history');
+        window.history.replaceState({}, '', url);
+        return;
+    }
+
+    try {
+        // 履歴データをJSONに変換
+        const historyData = qrHistory.map(item => ({
+            d: item.data,
+            t: item.timestamp
+        }));
+
+        const jsonData = JSON.stringify(historyData);
+
+        // Base64エンコード（簡易的な圧縮として）
+        const encodedData = btoa(unescape(encodeURIComponent(jsonData)));
+
+        // URLに設定
+        const url = new URL(window.location);
+        url.searchParams.set('history', encodedData);
+        window.history.replaceState({}, '', url);
+
+        console.log('URLを更新しました');
+    } catch (error) {
+        console.error('URL更新エラー:', error);
+    }
+}
+
+// URLから履歴を読み込み
+function loadHistoryFromURL() {
+    const url = new URL(window.location);
+    const encodedData = url.searchParams.get('history');
+
+    if (!encodedData) return;
+
+    try {
+        // Base64デコード
+        const jsonData = decodeURIComponent(escape(atob(encodedData)));
+        const historyData = JSON.parse(jsonData);
+
+        // 履歴を復元
+        qrHistory = historyData.map(item => ({
+            id: Date.now() + Math.random(),
+            data: item.d,
+            timestamp: item.t,
+            date: new Date()
+        }));
+
+        updateHistoryDisplay();
+        console.log('URLから履歴を読み込みました:', qrHistory.length, '件');
+    } catch (error) {
+        console.error('履歴読み込みエラー:', error);
+    }
+}
+
 // イベントリスナーの設定
 startCameraBtn.addEventListener('click', startCamera);
 stopCameraBtn.addEventListener('click', stopCamera);
 generateQRBtn.addEventListener('click', generateQRCode);
 downloadQRBtn.addEventListener('click', downloadQRCode);
 copyQRBtn.addEventListener('click', copyQRCode);
+
+// 履歴関連のイベントリスナー
+saveToHistoryBtn.addEventListener('click', saveToHistory);
+clearHistoryBtn.addEventListener('click', clearHistory);
+shareHistoryBtn.addEventListener('click', () => {
+    // 現在のURLをクリップボードにコピー
+    navigator.clipboard.writeText(window.location.href).then(() => {
+        alert('URLがクリップボードにコピーされました');
+    }).catch(() => {
+        alert('URLのコピーに失敗しました');
+    });
+});
 
 // EnterキーでQRコード生成
 qrInput.addEventListener('keypress', (e) => {
@@ -286,6 +466,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // QRコードオプションの設定
     setupQRCodeOptions();
+
+    // URLから履歴を読み込み
+    loadHistoryFromURL();
 });
 
 // QRCodeライブラリの読み込み確認

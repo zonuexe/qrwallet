@@ -102,6 +102,17 @@
                             <button id="copyQR" class="btn btn-secondary" disabled>クリップボードにコピー</button>
                         </div>
                     </div>
+
+                    <!-- QRコード履歴セクション -->
+                    <div class="qr-history">
+                        <h3>読み取り履歴</h3>
+                        <div class="history-controls">
+                            <button id="saveToHistory" class="btn btn-primary" disabled>履歴に保存</button>
+                            <button id="clearHistory" class="btn btn-secondary">履歴をクリア</button>
+                            <button id="shareHistory" class="btn btn-secondary" disabled>URLで共有</button>
+                        </div>
+                        <div id="historyList" class="history-list"></div>
+                    </div>
                 </section>
             </div>
         </main>

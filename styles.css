@@ -309,6 +309,121 @@ header p {
     border-radius: 6px;
 }
 
+/* QRコード履歴セクション */
+.qr-history {
+    margin-top: 30px;
+    background: #f7fafc;
+    border-radius: 15px;
+    padding: 20px;
+    border: 1px solid #e2e8f0;
+}
+
+.qr-history h3 {
+    color: #2d3748;
+    margin-bottom: 15px;
+    font-size: 1.1rem;
+    text-align: center;
+}
+
+.history-controls {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+}
+
+.history-list {
+    max-height: 300px;
+    overflow-y: auto;
+    border-radius: 10px;
+    background: white;
+    border: 1px solid #e2e8f0;
+}
+
+.history-item {
+    display: flex;
+    align-items: center;
+    padding: 15px;
+    border-bottom: 1px solid #e2e8f0;
+    transition: background-color 0.2s ease;
+}
+
+.history-item:last-child {
+    border-bottom: none;
+}
+
+.history-item:hover {
+    background-color: #f7fafc;
+}
+
+.history-item-content {
+    flex: 1;
+    margin-right: 15px;
+}
+
+.history-item-text {
+    font-family: 'Courier New', monospace;
+    font-size: 0.9rem;
+    color: #4a5568;
+    word-break: break-all;
+    margin-bottom: 5px;
+}
+
+.history-item-timestamp {
+    font-size: 0.8rem;
+    color: #718096;
+}
+
+.history-item-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.history-item-actions button {
+    padding: 6px 12px;
+    font-size: 0.8rem;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.history-item-actions .btn-regenerate {
+    background: #667eea;
+    color: white;
+}
+
+.history-item-actions .btn-regenerate:hover {
+    background: #5a67d8;
+}
+
+.history-item-actions .btn-delete {
+    background: #e53e3e;
+    color: white;
+}
+
+.history-item-actions .btn-delete:hover {
+    background: #c53030;
+}
+
+.history-item-actions .btn-copy {
+    background: #38a169;
+    color: white;
+}
+
+.history-item-actions .btn-copy:hover {
+    background: #2f855a;
+}
+
+/* 空の履歴状態 */
+.history-empty {
+    text-align: center;
+    padding: 40px 20px;
+    color: #718096;
+    font-style: italic;
+}
+
 .qr-display {
     text-align: center;
 }
