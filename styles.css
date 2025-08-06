@@ -367,12 +367,6 @@ header p {
     font-size: 0.9rem;
     color: #4a5568;
     word-break: break-all;
-    margin-bottom: 5px;
-}
-
-.history-item-timestamp {
-    font-size: 0.8rem;
-    color: #718096;
 }
 
 .history-item-actions {

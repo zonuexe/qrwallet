@@ -269,9 +269,7 @@ function saveToHistory() {
 
     const historyItem = {
         id: Date.now(),
-        data: currentQRData,
-        timestamp: new Date().toLocaleString('ja-JP'),
-        date: new Date()
+        data: currentQRData
     };
 
     qrHistory.unshift(historyItem);
@@ -294,7 +292,7 @@ function showCompressionInfo() {
     const historyParam = url.searchParams.get('history');
 
     if (historyParam) {
-        const originalSize = JSON.stringify(qrHistory.map(item => ({ d: item.data, t: item.timestamp }))).length;
+        const originalSize = JSON.stringify(qrHistory.map(item => ({ d: item.data }))).length;
         const compressedSize = historyParam.length;
         const compressionRatio = ((1 - compressedSize / originalSize) * 100).toFixed(1);
 
@@ -329,7 +327,6 @@ function updateHistoryDisplay() {
         <div class="history-item" data-id="${item.id}">
             <div class="history-item-content">
                 <div class="history-item-text">${escapeHtml(item.data)}</div>
-                <div class="history-item-timestamp">${item.timestamp}</div>
             </div>
             <div class="history-item-actions">
                 <button class="btn-regenerate" onclick="regenerateFromHistory('${item.id}')">再生成</button>
@@ -393,8 +390,7 @@ function updateURL() {
     try {
         // 履歴データをJSONに変換
         const historyData = qrHistory.map(item => ({
-            d: item.data,
-            t: item.timestamp
+            d: item.data
         }));
 
         const jsonData = JSON.stringify(historyData);
@@ -511,9 +507,7 @@ function loadHistoryFromURL() {
 function restoreHistory(historyData) {
     qrHistory = historyData.map(item => ({
         id: Date.now() + Math.random(),
-        data: item.d,
-        timestamp: item.t,
-        date: new Date()
+        data: item.d
     }));
 
     updateHistoryDisplay();
