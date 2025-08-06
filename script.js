@@ -283,7 +283,7 @@ function saveToHistory() {
 // 圧縮情報を表示
 function showCompressionInfo() {
     const url = new URL(window.location);
-    const historyParam = url.searchParams.get('history');
+    const historyParam = url.search.substring(1); // ?を除いた部分
 
     if (historyParam) {
         const originalSize = JSON.stringify(qrHistory).length;
@@ -372,24 +372,28 @@ function deleteHistoryItem(index) {
 
 // URLを更新（履歴をLZMA圧縮してエンコード）
 function updateURL() {
+    console.log('updateURL called, qrHistory length:', qrHistory.length);
+    
     if (qrHistory.length === 0) {
         // 履歴が空の場合はURLから履歴パラメータを削除
         const url = new URL(window.location);
         url.search = '';
         window.history.replaceState({}, '', url);
+        console.log('履歴が空のためURLをクリアしました');
         return;
     }
 
     try {
         // 履歴データをJSONに変換
         const jsonData = JSON.stringify(qrHistory);
+        console.log('JSON data length:', jsonData.length);
 
         // CompressionStreamで圧縮
         compressWithDeflate(jsonData).then(compressedData => {
             const url = new URL(window.location);
             url.search = '?' + compressedData;
             window.history.replaceState({}, '', url);
-            console.log('Deflate圧縮でURLを更新しました');
+            console.log('Deflate圧縮でURLを更新しました:', url.href);
         }).catch(error => {
             console.error('圧縮エラー:', error);
         });
