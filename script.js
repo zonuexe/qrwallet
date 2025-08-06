@@ -291,7 +291,7 @@ function showCompressionInfo() {
         const compressionRatio = ((1 - compressedSize / originalSize) * 100).toFixed(1);
 
         console.log(`圧縮情報: 元サイズ ${originalSize}バイト → 圧縮後 ${compressedSize}バイト (圧縮率: ${compressionRatio}%)`);
-        console.log('lz-string圧縮を使用しています');
+        console.log('Deflate圧縮 + 高効率URLセーフBase64を使用しています');
     }
 }
 
@@ -384,12 +384,15 @@ function updateURL() {
         // 履歴データをJSONに変換
         const jsonData = JSON.stringify(qrHistory);
 
-        // lz-stringで圧縮
-        const compressedData = LZString.compressToEncodedURIComponent(jsonData);
-        const url = new URL(window.location);
-        url.searchParams.set('history', compressedData);
-        window.history.replaceState({}, '', url);
-        console.log('lz-string圧縮でURLを更新しました');
+        // CompressionStreamで圧縮
+        compressWithDeflate(jsonData).then(compressedData => {
+            const url = new URL(window.location);
+            url.searchParams.set('history', compressedData);
+            window.history.replaceState({}, '', url);
+            console.log('Deflate圧縮でURLを更新しました');
+        }).catch(error => {
+            console.error('圧縮エラー:', error);
+        });
     } catch (error) {
         console.error('URL更新エラー:', error);
     }
@@ -407,13 +410,14 @@ function loadHistoryFromURL() {
     if (!encodedData) return;
 
     try {
-        // lz-stringで解凍
-        const decompressedData = LZString.decompressFromEncodedURIComponent(encodedData);
-        if (decompressedData) {
+        // Deflate解凍
+        decompressWithDeflate(encodedData).then(decompressedData => {
             const historyData = JSON.parse(decompressedData);
             restoreHistory(historyData);
-            console.log('lz-string解凍で履歴を読み込みました:', historyData.length, '件');
-        }
+            console.log('Deflate解凍で履歴を読み込みました:', historyData.length, '件');
+        }).catch(error => {
+            console.error('解凍エラー:', error);
+        });
     } catch (error) {
         console.error('履歴読み込みエラー:', error);
     }
@@ -539,4 +543,124 @@ window.addEventListener('error', (e) => {
 // 未処理のPromise拒否をキャッチ
 window.addEventListener('unhandledrejection', (e) => {
     console.error('未処理のPromise拒否:', e.reason);
-}); 
+});
+
+// 高効率URLセーフBase64エンコーディング
+// 使用文字: A-Z, a-z, 0-9, -, _, ~, ., :, @, !, $, ', (, ), *, +, ,, ;, =, ?, #, [, ]
+// &を除外して66文字（Base64の64文字より2文字多い）
+const URL_SAFE_CHARS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_~.:@!$\'()*+,;=?%#[]';
+
+// バイナリデータを高効率URLセーフBase64エンコード
+function binaryToUrlSafeBase64(buffer) {
+    const bytes = new Uint8Array(buffer);
+    let result = '';
+    let bits = 0;
+    let bitCount = 0;
+
+    for (let i = 0; i < bytes.length; i++) {
+        bits = (bits << 8) | bytes[i];
+        bitCount += 8;
+
+        while (bitCount >= 6) {
+            bitCount -= 6;
+            const index = (bits >> bitCount) & 0x3F;
+            result += URL_SAFE_CHARS[index];
+        }
+    }
+
+    // 残りのビットを処理
+    if (bitCount > 0) {
+        bits = bits << (6 - bitCount);
+        const index = bits & 0x3F;
+        result += URL_SAFE_CHARS[index];
+    }
+
+    return result;
+}
+
+// URLセーフBase64からバイナリデータに変換
+function urlSafeBase64ToBinary(encoded) {
+    const bytes = [];
+    let bits = 0;
+    let bitCount = 0;
+
+    for (let i = 0; i < encoded.length; i++) {
+        const char = encoded[i];
+        const index = URL_SAFE_CHARS.indexOf(char);
+        if (index === -1) continue;
+
+        bits = (bits << 6) | index;
+        bitCount += 6;
+
+        while (bitCount >= 8) {
+            bitCount -= 8;
+            bytes.push((bits >> bitCount) & 0xFF);
+        }
+    }
+
+    return new Uint8Array(bytes);
+}
+
+// CompressionStreamで圧縮
+async function compressWithDeflate(data) {
+    const stream = new CompressionStream('deflate');
+    const writer = stream.writable.getWriter();
+    const reader = stream.readable.getReader();
+    
+    // データを書き込み
+    const encoder = new TextEncoder();
+    const chunk = encoder.encode(data);
+    await writer.write(chunk);
+    await writer.close();
+    
+    // 圧縮データを読み取り
+    const chunks = [];
+    while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        chunks.push(value);
+    }
+    
+    // バイナリデータを結合
+    const compressedData = new Uint8Array(chunks.reduce((acc, chunk) => acc + chunk.length, 0));
+    let offset = 0;
+    for (const chunk of chunks) {
+        compressedData.set(chunk, offset);
+        offset += chunk.length;
+    }
+    
+    // 高効率URLセーフBase64エンコード
+    return binaryToUrlSafeBase64(compressedData);
+}
+
+// CompressionStreamで解凍
+async function decompressWithDeflate(encodedData) {
+    const stream = new DecompressionStream('deflate');
+    const writer = stream.writable.getWriter();
+    const reader = stream.readable.getReader();
+    
+    // エンコードされたデータをバイナリに変換
+    const compressedData = urlSafeBase64ToBinary(encodedData);
+    await writer.write(compressedData);
+    await writer.close();
+    
+    // 解凍データを読み取り
+    const chunks = [];
+    while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        chunks.push(value);
+    }
+    
+    // バイナリデータを結合
+    const decompressedData = new Uint8Array(chunks.reduce((acc, chunk) => acc + chunk.length, 0));
+    let offset = 0;
+    for (const chunk of chunks) {
+        decompressedData.set(chunk, offset);
+        offset += chunk.length;
+    }
+    
+    // テキストに変換
+    const decoder = new TextDecoder();
+    return decoder.decode(decompressedData);
+} 
