@@ -16,7 +16,6 @@
         <div v-if="currentView === 'main'" class="container">
             <header>
                 <h1>QR Wallet</h1>
-                <p>保存されたQRコードを管理します</p>
             </header>
 
             <main>
@@ -72,7 +71,6 @@
                     <button @click="switchToMainView" class="btn btn-back">← 戻る</button>
                     <h1>QRコード追加</h1>
                 </div>
-                <p>カメラでQRコードを読み取って、綺麗なQRコードとして再表示します</p>
             </header>
 
             <main>
@@ -92,8 +90,10 @@
                                 </div>
                             </div>
                             <div class="camera-controls">
-                                <button @click="startCamera" class="btn btn-primary" :disabled="isCameraActive">カメラ開始</button>
-                                <button @click="stopCamera" class="btn btn-secondary" :disabled="!isCameraActive">カメラ停止</button>
+                                <button @click="startCamera" class="btn btn-primary"
+                                    :disabled="isCameraActive">カメラ開始</button>
+                                <button @click="stopCamera" class="btn btn-secondary"
+                                    :disabled="!isCameraActive">カメラ停止</button>
                             </div>
                             <div class="scan-result">
                                 <p>{{ scanStatus }}</p>
@@ -109,7 +109,8 @@
                     <section class="generator-section">
                         <h2>QRコード生成</h2>
                         <div class="input-container">
-                            <textarea v-model="qrInputText" placeholder="QRコードに変換したいテキストを入力してください..." @input="debouncedRegenerate"></textarea>
+                            <textarea v-model="qrInputText" placeholder="QRコードに変換したいテキストを入力してください..."
+                                @input="debouncedRegenerate"></textarea>
                             <div class="input-buttons">
                                 <button @click="generateQRCode" class="btn btn-primary">QRコード生成</button>
                                 <button @click="addToWallet" class="btn btn-success">ウォレットに登録</button>
@@ -166,8 +167,10 @@
                         <div v-if="showQRGenerator" class="qr-display">
                             <div ref="qrCode" class="qr-code-container"></div>
                             <div class="qr-controls">
-                                <button @click="downloadQR" class="btn btn-secondary" :disabled="!hasGeneratedQR">ダウンロード</button>
-                                <button @click="copyQR" class="btn btn-secondary" :disabled="!hasGeneratedQR">クリップボードにコピー</button>
+                                <button @click="downloadQR" class="btn btn-secondary"
+                                    :disabled="!hasGeneratedQR">ダウンロード</button>
+                                <button @click="copyQR" class="btn btn-secondary"
+                                    :disabled="!hasGeneratedQR">クリップボードにコピー</button>
                             </div>
                         </div>
                     </section>
@@ -227,12 +230,14 @@
 
                                 <div class="option-group">
                                     <label>前景色:</label>
-                                    <input type="color" v-model="detailQROptions.darkColor" @change="regenerateDetailQR">
+                                    <input type="color" v-model="detailQROptions.darkColor"
+                                        @change="regenerateDetailQR">
                                 </div>
 
                                 <div class="option-group">
                                     <label>背景色:</label>
-                                    <input type="color" v-model="detailQROptions.lightColor" @change="regenerateDetailQR">
+                                    <input type="color" v-model="detailQROptions.lightColor"
+                                        @change="regenerateDetailQR">
                                 </div>
                             </div>
                         </div>
@@ -269,7 +274,7 @@
         </div>
 
         <footer>
-            <p>&copy; 2024 QR Wallet</p>
+            <p>&copy; 2025 USAMI Kenta</p>
             <div class="footer-trademark">
                 <p>※ QRコードは株式会社デンソーウェーブの登録商標です。</p>
                 <p>※ QR Code is a registered trademark of DENSO WAVE INCORPORATED.</p>
