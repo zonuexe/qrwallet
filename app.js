@@ -3,24 +3,17 @@ const { createApp } = Vue;
 createApp({
     data() {
         return {
-            // 画面管理
-            currentView: 'main', // 'main' or 'add'
+            currentView: 'main',
             showQRDetail: false,
             selectedQRIndex: -1,
-            
-            // 削除確認モーダル
             showDeleteConfirm: false,
             deleteTargetIndex: -1,
-
-            // カメラ関連
             isCameraActive: false,
             scanStatus: 'カメラを開始してQRコードを読み取ってください',
             scannedData: '',
             stream: null,
             scanInterval: null,
             showCameraSection: false,
-
-            // QRコード生成関連
             qrInputText: '',
             hasGeneratedQR: false,
             showQRGenerator: false,
@@ -31,8 +24,6 @@ createApp({
                 darkColor: '#000000',
                 lightColor: '#FFFFFF'
             },
-
-            // 詳細画面用のQRオプション
             detailQROptions: {
                 size: 200,
                 margin: 2,
@@ -40,12 +31,8 @@ createApp({
                 darkColor: '#000000',
                 lightColor: '#FFFFFF'
             },
-
-            // 履歴関連
             qrHistory: [],
             currentQRData: '',
-
-            // エンコーディング関連
             textEncoder: new TextEncoder(),
             textDecoder: new TextDecoder(),
             URL_SAFE_CHARS: 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_~'
@@ -64,12 +51,10 @@ createApp({
     async mounted() {
         await this.loadHistoryFromURL();
         this.checkQRCodeLibrary();
-        // QRCodeライブラリの読み込みを待ってからQRコードを生成
         this.waitForQRCodeLibrary();
     },
 
     methods: {
-        // 画面切り替え
         switchToMainView() {
             this.currentView = 'main';
             this.stopCamera();
@@ -85,7 +70,6 @@ createApp({
         },
 
         debouncedRegenerate() {
-            // デバウンス処理でちらつきを防ぐ
             clearTimeout(this.regenerateTimeout);
             this.regenerateTimeout = setTimeout(() => {
                 if (this.showQRGenerator && this.qrInputText.trim()) {
@@ -95,7 +79,6 @@ createApp({
             }, 300);
         },
 
-        // QRコード一覧表示
         generateAllQRCodes() {
             this.$nextTick(() => {
                 // DOM要素が準備できるまで少し待機
@@ -110,7 +93,6 @@ createApp({
         generateQRPreview(data, index) {
             if (typeof QRCode === 'undefined') return;
 
-            // v-for内のrefは配列として取得される
             const previewContainers = this.$refs.qrPreview;
             if (!previewContainers || !Array.isArray(previewContainers) || !previewContainers[index]) return;
 
@@ -129,10 +111,6 @@ createApp({
                     light: '#FFFFFF'
                 },
                 errorCorrectionLevel: 'M'
-            }, (error) => {
-                if (error) {
-                    console.error('QR preview generation error:', error);
-                }
             });
         },
 
@@ -142,11 +120,9 @@ createApp({
         },
 
         formatDisplayText(text) {
-            // URLの場合、アイコン付きで表示
             if (this.isURL(text)) {
                 return this.formatURLWithIcon(text);
             }
-            // 通常のテキストはファイルアイコン付きで表示
             return {
                 icon: 'fa-regular fa-file-lines',
                 text: text
@@ -166,8 +142,7 @@ createApp({
             try {
                 const urlObj = new URL(url);
                 const hostname = urlObj.hostname.toLowerCase();
-                
-                // Twitter/X
+
                 if (hostname.includes('twitter.com') || hostname.includes('x.com')) {
                     const username = urlObj.pathname.split('/')[1] || '';
                     return {
@@ -175,8 +150,7 @@ createApp({
                         text: username || 'twitter.com'
                     };
                 }
-                
-                // GitHub
+
                 if (hostname.includes('github.com')) {
                     const path = urlObj.pathname.split('/').filter(Boolean);
                     if (path.length >= 2) {
@@ -195,8 +169,7 @@ createApp({
                         text: 'github.com'
                     };
                 }
-                
-                // Pixiv
+
                 if (hostname.includes('pixiv.net')) {
                     const path = urlObj.pathname.split('/').filter(Boolean);
                     if (path.length >= 2 && path[0] === 'artworks') {
@@ -220,8 +193,7 @@ createApp({
                         text: 'pixiv.net'
                     };
                 }
-                
-                // その他のURL
+
                 return {
                     icon: 'fa-solid fa-link',
                     text: hostname + urlObj.pathname
@@ -234,7 +206,6 @@ createApp({
             }
         },
 
-        // QR詳細画面
         openQRDetail(index) {
             this.selectedQRIndex = index;
             this.detailQROptions = { ...this.qrOptions };
@@ -325,7 +296,6 @@ createApp({
             this.deleteTargetIndex = -1;
         },
 
-        // カメラ制御
         async startCamera() {
             try {
                 this.stream = await navigator.mediaDevices.getUserMedia({
@@ -399,7 +369,6 @@ createApp({
             }
         },
 
-        // QRコード生成
         generateQRCode() {
             if (!this.qrInputText.trim()) {
                 alert('テキストを入力してください');
@@ -416,7 +385,6 @@ createApp({
             this.createQRCode();
         },
 
-        // ウォレットに登録
         addToWallet() {
             if (!this.qrInputText.trim()) {
                 alert('テキストを入力してください');
@@ -523,7 +491,6 @@ createApp({
             alert('URLが更新されました。このURLを共有してください。');
         },
 
-        // URL圧縮・エンコーディング
         async updateURL() {
             if (this.qrHistory.length === 0) {
                 history.replaceState(null, '', window.location.pathname);
@@ -640,16 +607,14 @@ createApp({
             if (typeof QRCode !== 'undefined') {
                 this.generateAllQRCodes();
             } else {
-                // QRCodeライブラリが読み込まれるまで待機
                 setTimeout(() => {
                     this.waitForQRCodeLibrary();
                 }, 100);
             }
         },
 
-        addBookmark() {
+                addBookmark() {
             if (navigator.share) {
-                // Web Share APIが利用可能な場合
                 navigator.share({
                     title: 'QR Wallet',
                     url: window.location.href
@@ -662,21 +627,14 @@ createApp({
         },
 
         fallbackBookmark() {
-            // フォールバック: 手動でブックマーク追加を案内
-            const url = window.location.href;
-            const title = 'QR Wallet';
-            
             if (navigator.userAgent.includes('Safari') && !navigator.userAgent.includes('Chrome')) {
-                // Safariの場合
                 alert('Safariでブックマークを追加するには:\n1. 共有ボタンをタップ\n2. 「ブックマーク」を選択');
             } else {
-                // その他のブラウザ
                 alert('ブックマークを追加するには:\nCtrl+D (Windows) または Cmd+D (Mac) を押してください。');
             }
         },
 
         createNewWallet() {
-            // クエリパラメータがない状態のページを新しいタブで開く
             const baseUrl = window.location.origin + window.location.pathname;
             window.open(baseUrl, '_blank');
         },
