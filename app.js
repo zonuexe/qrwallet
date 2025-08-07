@@ -55,8 +55,8 @@ createApp({
         }
     },
 
-    mounted() {
-        this.loadHistoryFromURL();
+    async mounted() {
+        await this.loadHistoryFromURL();
         this.checkQRCodeLibrary();
         // QRCodeライブラリの読み込みを待ってからQRコードを生成
         this.waitForQRCodeLibrary();
@@ -77,9 +77,12 @@ createApp({
         // QRコード一覧表示
         generateAllQRCodes() {
             this.$nextTick(() => {
-                this.qrHistory.forEach((item, index) => {
-                    this.generateQRPreview(item, index);
-                });
+                // DOM要素が準備できるまで少し待機
+                setTimeout(() => {
+                    this.qrHistory.forEach((item, index) => {
+                        this.generateQRPreview(item, index);
+                    });
+                }, 100);
             });
         },
 
@@ -91,6 +94,8 @@ createApp({
             if (!previewContainers || !Array.isArray(previewContainers) || !previewContainers[index]) return;
 
             const previewContainer = previewContainers[index];
+            if (!previewContainer) return;
+
             const canvas = document.createElement('canvas');
             previewContainer.innerHTML = '';
             previewContainer.appendChild(canvas);
@@ -103,6 +108,10 @@ createApp({
                     light: '#FFFFFF'
                 },
                 errorCorrectionLevel: 'M'
+            }, (error) => {
+                if (error) {
+                    console.error('QR preview generation error:', error);
+                }
             });
         },
 
