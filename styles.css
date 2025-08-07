@@ -379,6 +379,45 @@ header p {
     backdrop-filter: blur(10px);
 }
 
+.section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: pointer;
+    padding: 10px 0;
+    transition: all 0.3s ease;
+}
+
+.section-header:hover {
+    background: rgba(102, 126, 234, 0.05);
+    border-radius: 10px;
+    padding: 10px;
+    margin: -10px;
+}
+
+.toggle-icon {
+    font-size: 1.2rem;
+    color: #667eea;
+    transition: transform 0.3s ease;
+}
+
+.section-content {
+    margin-top: 20px;
+    animation: slideDown 0.3s ease;
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
 .camera-section h2,
 .generator-section h2 {
     color: #4a5568;
@@ -528,6 +567,15 @@ video {
     background: #c53030 !important;
 }
 
+.btn-success {
+    background: #38a169;
+    color: white;
+}
+
+.btn-success:hover {
+    background: #2f855a;
+}
+
 /* スキャン結果 */
 .scan-result {
     text-align: center;
@@ -565,6 +613,13 @@ video {
 /* QRコード生成セクション */
 .input-container {
     margin-bottom: 25px;
+}
+
+.input-buttons {
+    display: flex;
+    gap: 15px;
+    margin-top: 15px;
+    flex-wrap: wrap;
 }
 
 textarea {

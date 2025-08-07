@@ -18,10 +18,12 @@ createApp({
             scannedData: '',
             stream: null,
             scanInterval: null,
+            showCameraSection: false,
 
             // QRコード生成関連
             qrInputText: '',
             hasGeneratedQR: false,
+            showQRGenerator: false,
             qrOptions: {
                 size: 200,
                 margin: 2,
@@ -76,6 +78,21 @@ createApp({
 
         switchToAddView() {
             this.currentView = 'add';
+        },
+
+        toggleCameraSection() {
+            this.showCameraSection = !this.showCameraSection;
+        },
+
+        debouncedRegenerate() {
+            // デバウンス処理でちらつきを防ぐ
+            clearTimeout(this.regenerateTimeout);
+            this.regenerateTimeout = setTimeout(() => {
+                if (this.showQRGenerator && this.qrInputText.trim()) {
+                    this.currentQRData = this.qrInputText;
+                    this.createQRCode();
+                }
+            }, 300);
         },
 
         // QRコード一覧表示
@@ -302,7 +319,19 @@ createApp({
             }
 
             this.currentQRData = this.qrInputText;
+            this.showQRGenerator = true;
             this.createQRCode();
+        },
+
+        // ウォレットに登録
+        addToWallet() {
+            if (!this.qrInputText.trim()) {
+                alert('テキストを入力してください');
+                return;
+            }
+
+            this.currentQRData = this.qrInputText;
+            this.saveToHistory();
         },
 
         createQRCode() {
@@ -328,7 +357,7 @@ createApp({
         },
 
         regenerateQR() {
-            if (this.currentQRData) {
+            if (this.currentQRData && this.showQRGenerator) {
                 this.createQRCode();
             }
         },
