@@ -76,21 +76,34 @@ createApp({
 
         // QRコード一覧表示
         generateAllQRCodes() {
+            console.log('generateAllQRCodes called, qrHistory length:', this.qrHistory.length);
             this.$nextTick(() => {
+                console.log('nextTick executed, generating QR codes...');
                 this.qrHistory.forEach((item, index) => {
+                    console.log('Generating QR for item:', item, 'index:', index);
                     this.generateQRPreview(item, index);
                 });
             });
         },
 
         generateQRPreview(data, index) {
-            if (typeof QRCode === 'undefined') return;
+            if (typeof QRCode === 'undefined') {
+                console.log('QRCode library not loaded');
+                return;
+            }
 
             // v-for内のrefは配列として取得される
             const previewContainers = this.$refs.qrPreview;
-            if (!previewContainers || !Array.isArray(previewContainers) || !previewContainers[index]) return;
+            console.log('previewContainers:', previewContainers);
+
+            if (!previewContainers || !Array.isArray(previewContainers) || !previewContainers[index]) {
+                console.log('previewContainers not found or invalid:', previewContainers, 'index:', index);
+                return;
+            }
 
             const previewContainer = previewContainers[index];
+            console.log('previewContainer found:', previewContainer);
+
             const canvas = document.createElement('canvas');
             previewContainer.innerHTML = '';
             previewContainer.appendChild(canvas);
@@ -103,6 +116,12 @@ createApp({
                     light: '#FFFFFF'
                 },
                 errorCorrectionLevel: 'M'
+            }, (error) => {
+                if (error) {
+                    console.error('QR code generation error:', error);
+                } else {
+                    console.log('QR code generated successfully for index:', index);
+                }
             });
         },
 
@@ -114,7 +133,6 @@ createApp({
         // QR詳細画面
         openQRDetail(index) {
             this.selectedQRIndex = index;
-            this.selectedQRData = this.qrHistory[index];
             this.detailQROptions = { ...this.qrOptions };
             this.showQRDetail = true;
             this.$nextTick(() => {
