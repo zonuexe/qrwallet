@@ -613,7 +613,7 @@ createApp({
             }
         },
 
-                addBookmark() {
+        addBookmark() {
             if (navigator.share) {
                 navigator.share({
                     title: 'QR Wallet',
