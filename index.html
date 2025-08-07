@@ -21,8 +21,9 @@
             <main>
                 <!-- QRコード一覧 -->
                 <div v-if="qrHistory.length > 0" class="qr-grid">
-                    <div v-for="(item, index) in qrHistory" :key="index" class="qr-card" @click="openQRDetail(index)">
-                        <div class="qr-card-content">
+                    <div v-for="(item, index) in qrHistory" :key="index" class="qr-card">
+                        <button @click.stop="deleteQRFromList(index)" class="btn-delete-card">×</button>
+                        <div class="qr-card-content" @click="openQRDetail(index)">
                             <div class="qr-preview" ref="qrPreview">
                                 <!-- QRコードプレビュー -->
                             </div>

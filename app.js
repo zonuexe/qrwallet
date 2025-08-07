@@ -60,11 +60,6 @@ createApp({
         this.checkQRCodeLibrary();
         // QRCodeライブラリの読み込みを待ってからQRコードを生成
         this.waitForQRCodeLibrary();
-        
-        // テスト用：QRコードが空の場合、サンプルデータを追加
-        if (this.qrHistory.length === 0) {
-            this.addSampleData();
-        }
     },
 
     methods: {
@@ -186,6 +181,12 @@ createApp({
                 this.closeQRDetail();
                 this.waitForQRCodeLibrary();
             }
+        },
+
+        deleteQRFromList(index) {
+            this.qrHistory.splice(index, 1);
+            this.updateURL();
+            this.waitForQRCodeLibrary();
         },
 
         // カメラ制御
@@ -498,15 +499,6 @@ createApp({
             }
         },
 
-        addSampleData() {
-            // テスト用のサンプルQRコードデータを追加
-            this.qrHistory = [
-                'https://example.com',
-                'Hello, QR Wallet!',
-                'tel:+1234567890',
-                'mailto:test@example.com'
-            ];
-            this.updateURL();
-        }
+
     }
 }).mount('#app'); 
