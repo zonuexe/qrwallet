@@ -137,6 +137,10 @@ header p {
     color: #333;
 }
 
+.qr-text .fa-pixiv {
+    color: #0096fa;
+}
+
 .qr-text .fa-link {
     color: #667eea;
 }

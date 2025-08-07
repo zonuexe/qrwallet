@@ -196,6 +196,31 @@ createApp({
                     };
                 }
                 
+                // Pixiv
+                if (hostname.includes('pixiv.net')) {
+                    const path = urlObj.pathname.split('/').filter(Boolean);
+                    if (path.length >= 2 && path[0] === 'artworks') {
+                        return {
+                            icon: 'fa-brands fa-pixiv',
+                            text: `artworks/${path[1]}`
+                        };
+                    } else if (path.length >= 1 && path[0] === 'users') {
+                        return {
+                            icon: 'fa-brands fa-pixiv',
+                            text: `users/${path[1] || ''}`
+                        };
+                    } else if (path.length >= 1) {
+                        return {
+                            icon: 'fa-brands fa-pixiv',
+                            text: path[0]
+                        };
+                    }
+                    return {
+                        icon: 'fa-brands fa-pixiv',
+                        text: 'pixiv.net'
+                    };
+                }
+                
                 // その他のURL
                 return {
                     icon: 'fa-solid fa-link',
