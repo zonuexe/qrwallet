@@ -4,16 +4,57 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>QRコード リーダー & ジェネレーター</title>
+    <title>QR Wallet</title>
     <link rel="stylesheet" href="styles.css">
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
 </head>
 
 <body>
     <div id="app">
-        <div class="container">
+        <!-- メイン画面（QRコード一覧） -->
+        <div v-if="currentView === 'main'" class="container">
             <header>
-                <h1>QRコード リーダー & ジェネレーター</h1>
+                <h1>QR Wallet</h1>
+                <p>保存されたQRコードを管理します</p>
+            </header>
+
+            <main>
+                <!-- QRコード一覧 -->
+                <div v-if="qrHistory.length > 0" class="qr-grid">
+                    <div v-for="(item, index) in qrHistory" :key="index" class="qr-card" @click="openQRDetail(index)">
+                        <div class="qr-card-content">
+                            <div class="qr-preview" ref="qrPreview">
+                                <!-- QRコードプレビュー -->
+                            </div>
+                            <div class="qr-text">{{ truncateText(item, 30) }}</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 空の状態 -->
+                <div v-else class="empty-state">
+                    <div class="empty-icon">📱</div>
+                    <h2>QRコードがありません</h2>
+                    <p>「Add QR code」ボタンを押してQRコードを追加してください</p>
+                </div>
+
+                <!-- Add QR code ボタン -->
+                <div class="add-qr-section">
+                    <button @click="switchToAddView" class="btn btn-primary btn-large">
+                        <span class="btn-icon">+</span>
+                        Add QR code
+                    </button>
+                </div>
+            </main>
+        </div>
+
+        <!-- QR追加画面 -->
+        <div v-else-if="currentView === 'add'" class="container">
+            <header>
+                <div class="header-with-back">
+                    <button @click="switchToMainView" class="btn btn-back">← 戻る</button>
+                    <h1>QRコード追加</h1>
+                </div>
                 <p>カメラでQRコードを読み取って、綺麗なQRコードとして再表示します</p>
             </header>
 
@@ -107,31 +148,92 @@
 
                         <!-- QRコード履歴セクション -->
                         <div class="qr-history">
-                            <h3>読み取り履歴</h3>
+                            <h3>保存</h3>
                             <div class="history-controls">
                                 <button @click="saveToHistory" class="btn btn-primary" :disabled="!canSaveToHistory">履歴に保存</button>
                                 <button @click="clearHistory" class="btn btn-secondary">履歴をクリア</button>
                                 <button @click="shareHistory" class="btn btn-secondary" :disabled="qrHistory.length === 0">URLで共有</button>
                             </div>
-                            <div class="history-list">
-                                <div v-for="(item, index) in qrHistory" :key="index" class="history-item">
-                                    <span class="history-text">{{ item }}</span>
-                                    <div class="history-actions">
-                                        <button @click="regenerateFromHistory(item)" class="btn btn-small">再生成</button>
-                                        <button @click="copyHistoryItem(item)" class="btn btn-small">コピー</button>
-                                        <button @click="deleteHistoryItem(index)" class="btn btn-small btn-danger">削除</button>
-                                    </div>
-                                </div>
-                            </div>
                         </div>
                     </section>
                 </div>
             </main>
-
-            <footer>
-                <p>&copy; 2024 QRコード リーダー & ジェネレーター</p>
-            </footer>
         </div>
+
+        <!-- QR詳細画面（モーダル） -->
+        <div v-if="showQRDetail" class="modal-overlay" @click="closeQRDetail">
+            <div class="modal-content" @click.stop>
+                <div class="modal-header">
+                    <h2>QRコード詳細</h2>
+                    <button @click="closeQRDetail" class="btn btn-close">×</button>
+                </div>
+                <div class="modal-body">
+                    <div class="qr-detail-content">
+                        <div class="qr-detail-qr">
+                            <div ref="qrDetailCode" class="qr-detail-container"></div>
+                        </div>
+                        <div class="qr-detail-text">
+                            <h3>テキスト内容</h3>
+                            <p>{{ selectedQRData }}</p>
+                        </div>
+                        <div class="qr-detail-options">
+                            <h3>生成オプション</h3>
+                            <div class="options-grid">
+                                <div class="option-group">
+                                    <label>サイズ:</label>
+                                    <select v-model="detailQROptions.size" @change="regenerateDetailQR">
+                                        <option value="128">128px</option>
+                                        <option value="200">200px</option>
+                                        <option value="256">256px</option>
+                                        <option value="320">320px</option>
+                                        <option value="400">400px</option>
+                                    </select>
+                                </div>
+
+                                <div class="option-group">
+                                    <label>マージン:</label>
+                                    <select v-model="detailQROptions.margin" @change="regenerateDetailQR">
+                                        <option value="0">なし</option>
+                                        <option value="1">小</option>
+                                        <option value="2">標準</option>
+                                        <option value="4">大</option>
+                                    </select>
+                                </div>
+
+                                <div class="option-group">
+                                    <label>エラー訂正レベル:</label>
+                                    <select v-model="detailQROptions.errorLevel" @change="regenerateDetailQR">
+                                        <option value="L">L (7%)</option>
+                                        <option value="M">M (15%)</option>
+                                        <option value="Q">Q (25%)</option>
+                                        <option value="H">H (30%)</option>
+                                    </select>
+                                </div>
+
+                                <div class="option-group">
+                                    <label>前景色:</label>
+                                    <input type="color" v-model="detailQROptions.darkColor" @change="regenerateDetailQR">
+                                </div>
+
+                                <div class="option-group">
+                                    <label>背景色:</label>
+                                    <input type="color" v-model="detailQROptions.lightColor" @change="regenerateDetailQR">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="qr-detail-actions">
+                            <button @click="downloadDetailQR" class="btn btn-primary">ダウンロード</button>
+                            <button @click="copyDetailQR" class="btn btn-secondary">クリップボードにコピー</button>
+                            <button @click="deleteQR" class="btn btn-danger">削除</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <footer>
+            <p>&copy; 2024 QR Wallet</p>
+        </footer>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>

@@ -3,6 +3,11 @@ const { createApp } = Vue;
 createApp({
     data() {
         return {
+            // 画面管理
+            currentView: 'main', // 'main' or 'add'
+            showQRDetail: false,
+            selectedQRIndex: -1,
+
             // カメラ関連
             isCameraActive: false,
             scanStatus: 'カメラを開始してQRコードを読み取ってください',
@@ -14,6 +19,15 @@ createApp({
             qrInputText: '',
             hasGeneratedQR: false,
             qrOptions: {
+                size: 200,
+                margin: 2,
+                errorLevel: 'M',
+                darkColor: '#000000',
+                lightColor: '#FFFFFF'
+            },
+
+            // 詳細画面用のQRオプション
+            detailQROptions: {
                 size: 200,
                 margin: 2,
                 errorLevel: 'M',
@@ -35,15 +49,138 @@ createApp({
     computed: {
         canSaveToHistory() {
             return this.currentQRData && this.currentQRData.trim() !== '';
+        },
+        selectedQRData() {
+            return this.selectedQRIndex >= 0 ? this.qrHistory[this.selectedQRIndex] : '';
         }
     },
 
     mounted() {
         this.loadHistoryFromURL();
         this.checkQRCodeLibrary();
+        this.generateAllQRCodes();
     },
 
     methods: {
+        // 画面切り替え
+        switchToMainView() {
+            this.currentView = 'main';
+            this.stopCamera();
+            this.generateAllQRCodes();
+        },
+
+        switchToAddView() {
+            this.currentView = 'add';
+        },
+
+        // QRコード一覧表示
+        generateAllQRCodes() {
+            this.$nextTick(() => {
+                this.qrHistory.forEach((item, index) => {
+                    this.generateQRPreview(item, index);
+                });
+            });
+        },
+
+        generateQRPreview(data, index) {
+            if (typeof QRCode === 'undefined') return;
+
+            const previewContainer = this.$refs.qrPreview;
+            if (!previewContainer || !previewContainer[index]) return;
+
+            const canvas = document.createElement('canvas');
+            previewContainer[index].innerHTML = '';
+            previewContainer[index].appendChild(canvas);
+
+            QRCode.toCanvas(canvas, data, {
+                width: 80,
+                margin: 1,
+                color: {
+                    dark: '#000000',
+                    light: '#FFFFFF'
+                },
+                errorCorrectionLevel: 'M'
+            });
+        },
+
+        truncateText(text, maxLength) {
+            if (text.length <= maxLength) return text;
+            return text.substring(0, maxLength) + '...';
+        },
+
+        // QR詳細画面
+        openQRDetail(index) {
+            this.selectedQRIndex = index;
+            this.selectedQRData = this.qrHistory[index];
+            this.detailQROptions = { ...this.qrOptions };
+            this.showQRDetail = true;
+            this.$nextTick(() => {
+                this.generateDetailQR();
+            });
+        },
+
+        closeQRDetail() {
+            this.showQRDetail = false;
+            this.selectedQRIndex = -1;
+        },
+
+        generateDetailQR() {
+            if (!this.selectedQRData || typeof QRCode === 'undefined') return;
+
+            const canvas = document.createElement('canvas');
+            this.$refs.qrDetailCode.innerHTML = '';
+            this.$refs.qrDetailCode.appendChild(canvas);
+
+            QRCode.toCanvas(canvas, this.selectedQRData, {
+                width: parseInt(this.detailQROptions.size),
+                margin: parseInt(this.detailQROptions.margin),
+                color: {
+                    dark: this.detailQROptions.darkColor,
+                    light: this.detailQROptions.lightColor
+                },
+                errorCorrectionLevel: this.detailQROptions.errorLevel
+            });
+        },
+
+        regenerateDetailQR() {
+            this.generateDetailQR();
+        },
+
+        downloadDetailQR() {
+            const canvas = this.$refs.qrDetailCode.querySelector('canvas');
+            if (!canvas) return;
+
+            const link = document.createElement('a');
+            link.download = 'qrcode.png';
+            link.href = canvas.toDataURL();
+            link.click();
+        },
+
+        async copyDetailQR() {
+            const canvas = this.$refs.qrDetailCode.querySelector('canvas');
+            if (!canvas) return;
+
+            try {
+                canvas.toBlob(async (blob) => {
+                    await navigator.clipboard.write([
+                        new ClipboardItem({ 'image/png': blob })
+                    ]);
+                    alert('QRコードがクリップボードにコピーされました');
+                });
+            } catch (error) {
+                alert('クリップボードへのコピーに失敗しました');
+            }
+        },
+
+        deleteQR() {
+            if (this.selectedQRIndex >= 0) {
+                this.qrHistory.splice(this.selectedQRIndex, 1);
+                this.updateURL();
+                this.closeQRDetail();
+                this.generateAllQRCodes();
+            }
+        },
+
         // カメラ制御
         async startCamera() {
             try {
@@ -196,6 +333,7 @@ createApp({
             }
             this.qrHistory.push(this.currentQRData);
             this.updateURL();
+            this.switchToMainView();
         },
 
         clearHistory() {
