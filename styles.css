@@ -81,7 +81,7 @@ header p {
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
 }
 
-#video {
+video {
     width: 100%;
     height: 300px;
     object-fit: cover;
@@ -185,12 +185,37 @@ header p {
     transform: none !important;
 }
 
+.btn-small {
+    padding: 6px 12px;
+    font-size: 0.8rem;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    background: #667eea;
+    color: white;
+}
+
+.btn-small:hover {
+    background: #5a67d8;
+    transform: translateY(-1px);
+}
+
+.btn-danger {
+    background: #e53e3e !important;
+    color: white !important;
+}
+
+.btn-danger:hover {
+    background: #c53030 !important;
+}
+
 /* スキャン結果 */
 .scan-result {
     text-align: center;
 }
 
-#scanStatus {
+.scan-result p {
     color: #4a5568;
     font-weight: 500;
     margin-bottom: 15px;
@@ -209,7 +234,7 @@ header p {
     margin-bottom: 10px;
 }
 
-#dataText {
+.scanned-data p {
     background: white;
     padding: 15px;
     border-radius: 8px;
@@ -224,7 +249,7 @@ header p {
     margin-bottom: 25px;
 }
 
-#qrInput {
+textarea {
     width: 100%;
     min-height: 120px;
     padding: 15px;
@@ -236,7 +261,7 @@ header p {
     transition: border-color 0.3s ease;
 }
 
-#qrInput:focus {
+textarea:focus {
     outline: none;
     border-color: #667eea;
     box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
@@ -362,19 +387,21 @@ header p {
     margin-right: 15px;
 }
 
-.history-item-text {
+.history-text {
     font-family: 'Courier New', monospace;
     font-size: 0.9rem;
     color: #4a5568;
     word-break: break-all;
+    flex: 1;
+    margin-right: 15px;
 }
 
-.history-item-actions {
+.history-actions {
     display: flex;
     gap: 8px;
 }
 
-.history-item-actions button {
+.history-actions button {
     padding: 6px 12px;
     font-size: 0.8rem;
     border: none;
@@ -383,31 +410,22 @@ header p {
     transition: all 0.2s ease;
 }
 
-.history-item-actions .btn-regenerate {
+.history-actions .btn-small {
     background: #667eea;
     color: white;
 }
 
-.history-item-actions .btn-regenerate:hover {
+.history-actions .btn-small:hover {
     background: #5a67d8;
 }
 
-.history-item-actions .btn-delete {
+.history-actions .btn-danger {
     background: #e53e3e;
     color: white;
 }
 
-.history-item-actions .btn-delete:hover {
+.history-actions .btn-danger:hover {
     background: #c53030;
-}
-
-.history-item-actions .btn-copy {
-    background: #38a169;
-    color: white;
-}
-
-.history-item-actions .btn-copy:hover {
-    background: #2f855a;
 }
 
 /* 空の履歴状態 */

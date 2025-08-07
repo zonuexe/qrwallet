@@ -6,125 +6,137 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>QRコード リーダー & ジェネレーター</title>
     <link rel="stylesheet" href="styles.css">
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
 </head>
 
 <body>
-    <div class="container">
-        <header>
-            <h1>QRコード リーダー & ジェネレーター</h1>
-            <p>カメラでQRコードを読み取って、綺麗なQRコードとして再表示します</p>
-        </header>
+    <div id="app">
+        <div class="container">
+            <header>
+                <h1>QRコード リーダー & ジェネレーター</h1>
+                <p>カメラでQRコードを読み取って、綺麗なQRコードとして再表示します</p>
+            </header>
 
-        <main>
-            <div class="app-container">
-                <!-- カメラ読み取りセクション -->
-                <section class="camera-section">
-                    <h2>QRコード読み取り</h2>
-                    <div class="camera-container">
-                        <video id="video" autoplay muted playsinline></video>
-                        <canvas id="canvas" style="display: none;"></canvas>
-                        <div class="camera-overlay">
-                            <div class="scan-area"></div>
-                        </div>
-                    </div>
-                    <div class="camera-controls">
-                        <button id="startCamera" class="btn btn-primary">カメラ開始</button>
-                        <button id="stopCamera" class="btn btn-secondary" disabled>カメラ停止</button>
-                    </div>
-                    <div class="scan-result">
-                        <p id="scanStatus">カメラを開始してQRコードを読み取ってください</p>
-                        <div id="scannedData" class="scanned-data" style="display: none;">
-                            <h3>読み取り結果:</h3>
-                            <p id="dataText"></p>
-                        </div>
-                    </div>
-                </section>
-
-                <!-- QRコード生成セクション -->
-                <section class="generator-section">
-                    <h2>QRコード生成</h2>
-                    <div class="input-container">
-                        <textarea id="qrInput" placeholder="QRコードに変換したいテキストを入力してください..."></textarea>
-                        <button id="generateQR" class="btn btn-primary">QRコード生成</button>
-                    </div>
-
-                    <!-- QRコード生成オプション -->
-                    <div class="qr-options">
-                        <h3>生成オプション</h3>
-                        <div class="options-grid">
-                            <div class="option-group">
-                                <label for="qrSize">サイズ:</label>
-                                <select id="qrSize">
-                                    <option value="128">128px</option>
-                                    <option value="200" selected>200px</option>
-                                    <option value="256">256px</option>
-                                    <option value="320">320px</option>
-                                    <option value="400">400px</option>
-                                </select>
-                            </div>
-
-                            <div class="option-group">
-                                <label for="qrMargin">マージン:</label>
-                                <select id="qrMargin">
-                                    <option value="0">なし</option>
-                                    <option value="1">小</option>
-                                    <option value="2" selected>標準</option>
-                                    <option value="4">大</option>
-                                </select>
-                            </div>
-
-                            <div class="option-group">
-                                <label for="qrErrorLevel">エラー訂正レベル:</label>
-                                <select id="qrErrorLevel">
-                                    <option value="L">L (7%)</option>
-                                    <option value="M" selected>M (15%)</option>
-                                    <option value="Q">Q (25%)</option>
-                                    <option value="H">H (30%)</option>
-                                </select>
-                            </div>
-
-                            <div class="option-group">
-                                <label for="qrDarkColor">前景色:</label>
-                                <input type="color" id="qrDarkColor" value="#000000">
-                            </div>
-
-                            <div class="option-group">
-                                <label for="qrLightColor">背景色:</label>
-                                <input type="color" id="qrLightColor" value="#FFFFFF">
+            <main>
+                <div class="app-container">
+                    <!-- カメラ読み取りセクション -->
+                    <section class="camera-section">
+                        <h2>QRコード読み取り</h2>
+                        <div class="camera-container">
+                            <video ref="video" autoplay muted playsinline></video>
+                            <canvas ref="canvas" style="display: none;"></canvas>
+                            <div class="camera-overlay">
+                                <div class="scan-area"></div>
                             </div>
                         </div>
-                    </div>
-
-                    <div class="qr-display">
-                        <div id="qrCode" class="qr-code-container"></div>
-                        <div class="qr-controls">
-                            <button id="downloadQR" class="btn btn-secondary" disabled>ダウンロード</button>
-                            <button id="copyQR" class="btn btn-secondary" disabled>クリップボードにコピー</button>
+                        <div class="camera-controls">
+                            <button @click="startCamera" class="btn btn-primary" :disabled="isCameraActive">カメラ開始</button>
+                            <button @click="stopCamera" class="btn btn-secondary" :disabled="!isCameraActive">カメラ停止</button>
                         </div>
-                    </div>
-
-                    <!-- QRコード履歴セクション -->
-                    <div class="qr-history">
-                        <h3>読み取り履歴</h3>
-                        <div class="history-controls">
-                            <button id="saveToHistory" class="btn btn-primary" disabled>履歴に保存</button>
-                            <button id="clearHistory" class="btn btn-secondary">履歴をクリア</button>
-                            <button id="shareHistory" class="btn btn-secondary" disabled>URLで共有</button>
+                        <div class="scan-result">
+                            <p>{{ scanStatus }}</p>
+                            <div v-if="scannedData" class="scanned-data">
+                                <h3>読み取り結果:</h3>
+                                <p>{{ scannedData }}</p>
+                            </div>
                         </div>
-                        <div id="historyList" class="history-list"></div>
-                    </div>
-                </section>
-            </div>
-        </main>
+                    </section>
 
-        <footer>
-            <p>&copy; 2024 QRコード リーダー & ジェネレーター</p>
-        </footer>
+                    <!-- QRコード生成セクション -->
+                    <section class="generator-section">
+                        <h2>QRコード生成</h2>
+                        <div class="input-container">
+                            <textarea v-model="qrInputText" placeholder="QRコードに変換したいテキストを入力してください..."></textarea>
+                            <button @click="generateQRCode" class="btn btn-primary">QRコード生成</button>
+                        </div>
+
+                        <!-- QRコード生成オプション -->
+                        <div class="qr-options">
+                            <h3>生成オプション</h3>
+                            <div class="options-grid">
+                                <div class="option-group">
+                                    <label for="qrSize">サイズ:</label>
+                                    <select v-model="qrOptions.size" @change="regenerateQR">
+                                        <option value="128">128px</option>
+                                        <option value="200">200px</option>
+                                        <option value="256">256px</option>
+                                        <option value="320">320px</option>
+                                        <option value="400">400px</option>
+                                    </select>
+                                </div>
+
+                                <div class="option-group">
+                                    <label for="qrMargin">マージン:</label>
+                                    <select v-model="qrOptions.margin" @change="regenerateQR">
+                                        <option value="0">なし</option>
+                                        <option value="1">小</option>
+                                        <option value="2">標準</option>
+                                        <option value="4">大</option>
+                                    </select>
+                                </div>
+
+                                <div class="option-group">
+                                    <label for="qrErrorLevel">エラー訂正レベル:</label>
+                                    <select v-model="qrOptions.errorLevel" @change="regenerateQR">
+                                        <option value="L">L (7%)</option>
+                                        <option value="M">M (15%)</option>
+                                        <option value="Q">Q (25%)</option>
+                                        <option value="H">H (30%)</option>
+                                    </select>
+                                </div>
+
+                                <div class="option-group">
+                                    <label for="qrDarkColor">前景色:</label>
+                                    <input type="color" v-model="qrOptions.darkColor" @change="regenerateQR">
+                                </div>
+
+                                <div class="option-group">
+                                    <label for="qrLightColor">背景色:</label>
+                                    <input type="color" v-model="qrOptions.lightColor" @change="regenerateQR">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="qr-display">
+                            <div ref="qrCode" class="qr-code-container"></div>
+                            <div class="qr-controls">
+                                <button @click="downloadQR" class="btn btn-secondary" :disabled="!hasGeneratedQR">ダウンロード</button>
+                                <button @click="copyQR" class="btn btn-secondary" :disabled="!hasGeneratedQR">クリップボードにコピー</button>
+                            </div>
+                        </div>
+
+                        <!-- QRコード履歴セクション -->
+                        <div class="qr-history">
+                            <h3>読み取り履歴</h3>
+                            <div class="history-controls">
+                                <button @click="saveToHistory" class="btn btn-primary" :disabled="!canSaveToHistory">履歴に保存</button>
+                                <button @click="clearHistory" class="btn btn-secondary">履歴をクリア</button>
+                                <button @click="shareHistory" class="btn btn-secondary" :disabled="qrHistory.length === 0">URLで共有</button>
+                            </div>
+                            <div class="history-list">
+                                <div v-for="(item, index) in qrHistory" :key="index" class="history-item">
+                                    <span class="history-text">{{ item }}</span>
+                                    <div class="history-actions">
+                                        <button @click="regenerateFromHistory(item)" class="btn btn-small">再生成</button>
+                                        <button @click="copyHistoryItem(item)" class="btn btn-small">コピー</button>
+                                        <button @click="deleteHistoryItem(index)" class="btn btn-small btn-danger">削除</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+                </div>
+            </main>
+
+            <footer>
+                <p>&copy; 2024 QRコード リーダー & ジェネレーター</p>
+            </footer>
+        </div>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.1/build/qrcode.js"></script>
-    <script src="script.js"></script>
+    <script src="app.js"></script>
 </body>
 
 </html>
