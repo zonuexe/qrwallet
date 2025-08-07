@@ -215,6 +215,10 @@ header p {
     box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
 }
 
+.modal-small {
+    max-width: 500px;
+}
+
 .modal-header {
     display: flex;
     justify-content: space-between;
@@ -289,6 +293,43 @@ header p {
 }
 
 .qr-detail-actions {
+    display: flex;
+    gap: 15px;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+/* 削除確認モーダル */
+.delete-confirm-content {
+    text-align: center;
+    padding: 20px 0;
+}
+
+.delete-confirm-icon {
+    font-size: 3rem;
+    margin-bottom: 20px;
+}
+
+.delete-confirm-message {
+    font-size: 1.2rem;
+    color: #2d3748;
+    margin-bottom: 20px;
+    font-weight: 600;
+}
+
+.delete-confirm-text {
+    background: #f7fafc;
+    padding: 15px;
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
+    margin-bottom: 30px;
+    word-break: break-all;
+    font-family: 'Courier New', monospace;
+    font-size: 0.9rem;
+    line-height: 1.5;
+}
+
+.delete-confirm-actions {
     display: flex;
     gap: 15px;
     justify-content: center;

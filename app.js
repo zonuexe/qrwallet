@@ -7,6 +7,10 @@ createApp({
             currentView: 'main', // 'main' or 'add'
             showQRDetail: false,
             selectedQRIndex: -1,
+            
+            // 削除確認モーダル
+            showDeleteConfirm: false,
+            deleteTargetIndex: -1,
 
             // カメラ関連
             isCameraActive: false,
@@ -193,9 +197,22 @@ createApp({
         },
 
         deleteQRFromList(index) {
-            this.qrHistory.splice(index, 1);
-            this.updateURL();
-            this.waitForQRCodeLibrary();
+            this.deleteTargetIndex = index;
+            this.showDeleteConfirm = true;
+        },
+
+        confirmDelete() {
+            if (this.deleteTargetIndex >= 0) {
+                this.qrHistory.splice(this.deleteTargetIndex, 1);
+                this.updateURL();
+                this.waitForQRCodeLibrary();
+            }
+            this.cancelDelete();
+        },
+
+        cancelDelete() {
+            this.showDeleteConfirm = false;
+            this.deleteTargetIndex = -1;
         },
 
         // カメラ制御

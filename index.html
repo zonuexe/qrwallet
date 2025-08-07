@@ -232,6 +232,28 @@
             </div>
         </div>
 
+        <!-- 削除確認モーダル -->
+        <div v-if="showDeleteConfirm" class="modal-overlay" @click="cancelDelete">
+            <div class="modal-content modal-small" @click.stop>
+                <div class="modal-header">
+                    <h2>削除確認</h2>
+                </div>
+                <div class="modal-body">
+                    <div class="delete-confirm-content">
+                        <div class="delete-confirm-icon">⚠️</div>
+                        <p class="delete-confirm-message">このQRコードの登録を解除してよいですか？</p>
+                        <div class="delete-confirm-text">
+                            <strong>内容:</strong> {{ qrHistory[deleteTargetIndex] }}
+                        </div>
+                        <div class="delete-confirm-actions">
+                            <button @click="confirmDelete" class="btn btn-danger">削除</button>
+                            <button @click="cancelDelete" class="btn btn-secondary">キャンセル</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <footer>
             <p>&copy; 2024 QR Wallet</p>
         </footer>
