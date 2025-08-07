@@ -60,6 +60,11 @@ createApp({
         this.checkQRCodeLibrary();
         // QRCodeライブラリの読み込みを待ってからQRコードを生成
         this.waitForQRCodeLibrary();
+        
+        // テスト用：QRコードが空の場合、サンプルデータを追加
+        if (this.qrHistory.length === 0) {
+            this.addSampleData();
+        }
     },
 
     methods: {
@@ -76,34 +81,21 @@ createApp({
 
         // QRコード一覧表示
         generateAllQRCodes() {
-            console.log('generateAllQRCodes called, qrHistory length:', this.qrHistory.length);
             this.$nextTick(() => {
-                console.log('nextTick executed, generating QR codes...');
                 this.qrHistory.forEach((item, index) => {
-                    console.log('Generating QR for item:', item, 'index:', index);
                     this.generateQRPreview(item, index);
                 });
             });
         },
 
         generateQRPreview(data, index) {
-            if (typeof QRCode === 'undefined') {
-                console.log('QRCode library not loaded');
-                return;
-            }
+            if (typeof QRCode === 'undefined') return;
 
             // v-for内のrefは配列として取得される
             const previewContainers = this.$refs.qrPreview;
-            console.log('previewContainers:', previewContainers);
-
-            if (!previewContainers || !Array.isArray(previewContainers) || !previewContainers[index]) {
-                console.log('previewContainers not found or invalid:', previewContainers, 'index:', index);
-                return;
-            }
+            if (!previewContainers || !Array.isArray(previewContainers) || !previewContainers[index]) return;
 
             const previewContainer = previewContainers[index];
-            console.log('previewContainer found:', previewContainer);
-
             const canvas = document.createElement('canvas');
             previewContainer.innerHTML = '';
             previewContainer.appendChild(canvas);
@@ -116,12 +108,6 @@ createApp({
                     light: '#FFFFFF'
                 },
                 errorCorrectionLevel: 'M'
-            }, (error) => {
-                if (error) {
-                    console.error('QR code generation error:', error);
-                } else {
-                    console.log('QR code generated successfully for index:', index);
-                }
             });
         },
 
@@ -510,6 +496,17 @@ createApp({
                     this.waitForQRCodeLibrary();
                 }, 100);
             }
+        },
+
+        addSampleData() {
+            // テスト用のサンプルQRコードデータを追加
+            this.qrHistory = [
+                'https://example.com',
+                'Hello, QR Wallet!',
+                'tel:+1234567890',
+                'mailto:test@example.com'
+            ];
+            this.updateURL();
         }
     }
 }).mount('#app'); 
