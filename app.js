@@ -58,7 +58,8 @@ createApp({
     mounted() {
         this.loadHistoryFromURL();
         this.checkQRCodeLibrary();
-        this.generateAllQRCodes();
+        // QRCodeライブラリの読み込みを待ってからQRコードを生成
+        this.waitForQRCodeLibrary();
     },
 
     methods: {
@@ -66,7 +67,7 @@ createApp({
         switchToMainView() {
             this.currentView = 'main';
             this.stopCamera();
-            this.generateAllQRCodes();
+            this.waitForQRCodeLibrary();
         },
 
         switchToAddView() {
@@ -85,12 +86,14 @@ createApp({
         generateQRPreview(data, index) {
             if (typeof QRCode === 'undefined') return;
 
-            const previewContainer = this.$refs.qrPreview;
-            if (!previewContainer || !previewContainer[index]) return;
+            // v-for内のrefは配列として取得される
+            const previewContainers = this.$refs.qrPreview;
+            if (!previewContainers || !Array.isArray(previewContainers) || !previewContainers[index]) return;
 
+            const previewContainer = previewContainers[index];
             const canvas = document.createElement('canvas');
-            previewContainer[index].innerHTML = '';
-            previewContainer[index].appendChild(canvas);
+            previewContainer.innerHTML = '';
+            previewContainer.appendChild(canvas);
 
             QRCode.toCanvas(canvas, data, {
                 width: 80,
@@ -177,15 +180,15 @@ createApp({
                 this.qrHistory.splice(this.selectedQRIndex, 1);
                 this.updateURL();
                 this.closeQRDetail();
-                this.generateAllQRCodes();
+                this.waitForQRCodeLibrary();
             }
         },
 
         // カメラ制御
         async startCamera() {
             try {
-                this.stream = await navigator.mediaDevices.getUserMedia({ 
-                    video: { facingMode: 'environment' } 
+                this.stream = await navigator.mediaDevices.getUserMedia({
+                    video: { facingMode: 'environment' }
                 });
                 this.$refs.video.srcObject = this.stream;
                 this.isCameraActive = true;
@@ -238,16 +241,16 @@ createApp({
                 const audioContext = new (window.AudioContext || window.webkitAudioContext)();
                 const oscillator = audioContext.createOscillator();
                 const gainNode = audioContext.createGain();
-                
+
                 oscillator.connect(gainNode);
                 gainNode.connect(audioContext.destination);
-                
+
                 oscillator.frequency.setValueAtTime(800, audioContext.currentTime);
                 oscillator.frequency.setValueAtTime(600, audioContext.currentTime + 0.1);
-                
+
                 gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
                 gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.2);
-                
+
                 oscillator.start(audioContext.currentTime);
                 oscillator.stop(audioContext.currentTime + 0.2);
             } catch (error) {
@@ -377,7 +380,7 @@ createApp({
             const jsonData = JSON.stringify(this.qrHistory);
             const compressedData = await this.compressWithDeflate(jsonData);
             const encodedData = this.binaryToUrlSafe(compressedData);
-            
+
             const url = new URL(window.location);
             url.search = '?' + encodedData;
             history.replaceState(null, '', url);
@@ -386,7 +389,7 @@ createApp({
         async loadHistoryFromURL() {
             const url = new URL(window.location);
             const encodedData = url.search.substring(1);
-            
+
             if (!encodedData) return;
 
             try {
@@ -477,6 +480,17 @@ createApp({
                         // QRCodeライブラリが読み込まれていない場合の処理
                     }
                 }, 1000);
+            }
+        },
+
+        waitForQRCodeLibrary() {
+            if (typeof QRCode !== 'undefined') {
+                this.generateAllQRCodes();
+            } else {
+                // QRCodeライブラリが読み込まれるまで待機
+                setTimeout(() => {
+                    this.waitForQRCodeLibrary();
+                }, 100);
             }
         }
     }
