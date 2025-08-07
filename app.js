@@ -647,6 +647,40 @@ createApp({
             }
         },
 
+        addBookmark() {
+            if (navigator.share) {
+                // Web Share APIが利用可能な場合
+                navigator.share({
+                    title: 'QR Wallet',
+                    url: window.location.href
+                }).catch(() => {
+                    this.fallbackBookmark();
+                });
+            } else {
+                this.fallbackBookmark();
+            }
+        },
+
+        fallbackBookmark() {
+            // フォールバック: 手動でブックマーク追加を案内
+            const url = window.location.href;
+            const title = 'QR Wallet';
+            
+            if (navigator.userAgent.includes('Safari') && !navigator.userAgent.includes('Chrome')) {
+                // Safariの場合
+                alert('Safariでブックマークを追加するには:\n1. 共有ボタンをタップ\n2. 「ブックマーク」を選択');
+            } else {
+                // その他のブラウザ
+                alert('ブックマークを追加するには:\nCtrl+D (Windows) または Cmd+D (Mac) を押してください。');
+            }
+        },
+
+        createNewWallet() {
+            // クエリパラメータがない状態のページを新しいタブで開く
+            const baseUrl = window.location.origin + window.location.pathname;
+            window.open(baseUrl, '_blank');
+        },
+
 
     }
 }).mount('#app'); 

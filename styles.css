@@ -207,6 +207,34 @@ header p {
     padding: 40px 20px;
 }
 
+.additional-actions {
+    text-align: center;
+    padding: 20px;
+    margin-top: 20px;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.btn-subtle {
+    background: rgba(255, 255, 255, 0.1);
+    color: white;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    padding: 8px 16px;
+    margin: 0 8px;
+    font-size: 0.9rem;
+    opacity: 0.8;
+    transition: all 0.3s ease;
+}
+
+.btn-subtle:hover {
+    background: rgba(255, 255, 255, 0.2);
+    opacity: 1;
+    transform: translateY(-1px);
+}
+
+.btn-subtle i {
+    margin-right: 6px;
+}
+
 .btn-large {
     padding: 15px 30px;
     font-size: 1.2rem;
@@ -842,6 +870,16 @@ footer {
 
     .qr-preview {
         padding: 10px;
+    }
+    
+    .additional-actions {
+        padding: 15px;
+    }
+    
+    .btn-subtle {
+        padding: 6px 12px;
+        font-size: 0.8rem;
+        margin: 0 4px;
     }
 }
 
