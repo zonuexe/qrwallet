@@ -117,6 +117,28 @@ header p {
     line-height: 1.4;
     max-height: 60px;
     overflow: hidden;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    justify-content: center;
+}
+
+.qr-text i {
+    font-size: 1rem;
+    min-width: 16px;
+    text-align: center;
+}
+
+.qr-text .fa-twitter {
+    color: #1da1f2;
+}
+
+.qr-text .fa-github {
+    color: #333;
+}
+
+.qr-text .fa-link {
+    color: #667eea;
 }
 
 .btn-delete-card {

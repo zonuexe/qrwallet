@@ -141,6 +141,71 @@ createApp({
             return text.substring(0, maxLength) + '...';
         },
 
+        formatDisplayText(text) {
+            // URLの場合、アイコン付きで表示
+            if (this.isURL(text)) {
+                return this.formatURLWithIcon(text);
+            }
+            // 通常のテキストはそのまま返す
+            return text;
+        },
+
+        isURL(text) {
+            try {
+                new URL(text);
+                return true;
+            } catch {
+                return false;
+            }
+        },
+
+        formatURLWithIcon(url) {
+            try {
+                const urlObj = new URL(url);
+                const hostname = urlObj.hostname.toLowerCase();
+                
+                // Twitter/X
+                if (hostname.includes('twitter.com') || hostname.includes('x.com')) {
+                    const username = urlObj.pathname.split('/')[1] || '';
+                    return {
+                        icon: 'fa-brands fa-twitter',
+                        text: username || 'twitter.com'
+                    };
+                }
+                
+                // GitHub
+                if (hostname.includes('github.com')) {
+                    const path = urlObj.pathname.split('/').filter(Boolean);
+                    if (path.length >= 2) {
+                        return {
+                            icon: 'fa-brands fa-github',
+                            text: `${path[0]}/${path[1]}`
+                        };
+                    } else if (path.length === 1) {
+                        return {
+                            icon: 'fa-brands fa-github',
+                            text: path[0]
+                        };
+                    }
+                    return {
+                        icon: 'fa-brands fa-github',
+                        text: 'github.com'
+                    };
+                }
+                
+                // その他のURL
+                return {
+                    icon: 'fa-solid fa-link',
+                    text: hostname + urlObj.pathname
+                };
+            } catch {
+                return {
+                    icon: 'fa-solid fa-link',
+                    text: text
+                };
+            }
+        },
+
         // QR詳細画面
         openQRDetail(index) {
             this.selectedQRIndex = index;

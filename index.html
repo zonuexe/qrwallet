@@ -6,6 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>QR Wallet</title>
     <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
 </head>
 
@@ -27,7 +28,15 @@
                             <div class="qr-preview" ref="qrPreview">
                                 <!-- QRコードプレビュー -->
                             </div>
-                            <div class="qr-text">{{ truncateText(item, 30) }}</div>
+                            <div class="qr-text">
+                                <template v-if="isURL(item)">
+                                    <i :class="formatURLWithIcon(item).icon"></i>
+                                    <span>{{ truncateText(formatURLWithIcon(item).text, 25) }}</span>
+                                </template>
+                                <template v-else>
+                                    {{ truncateText(item, 30) }}
+                                </template>
+                            </div>
                         </div>
                     </div>
                 </div>
