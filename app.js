@@ -146,8 +146,11 @@ createApp({
             if (this.isURL(text)) {
                 return this.formatURLWithIcon(text);
             }
-            // 通常のテキストはそのまま返す
-            return text;
+            // 通常のテキストはファイルアイコン付きで表示
+            return {
+                icon: 'fa-regular fa-file-lines',
+                text: text
+            };
         },
 
         isURL(text) {

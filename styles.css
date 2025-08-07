@@ -141,6 +141,10 @@ header p {
     color: #667eea;
 }
 
+.qr-text .fa-file-lines {
+    color: #718096;
+}
+
 .btn-delete-card {
     position: absolute;
     top: 8px;

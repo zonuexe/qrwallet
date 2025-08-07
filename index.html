@@ -29,13 +29,8 @@
                                 <!-- QRコードプレビュー -->
                             </div>
                             <div class="qr-text">
-                                <template v-if="isURL(item)">
-                                    <i :class="formatURLWithIcon(item).icon"></i>
-                                    <span>{{ truncateText(formatURLWithIcon(item).text, 25) }}</span>
-                                </template>
-                                <template v-else>
-                                    {{ truncateText(item, 30) }}
-                                </template>
+                                <i :class="formatDisplayText(item).icon"></i>
+                                <span>{{ truncateText(formatDisplayText(item).text, 25) }}</span>
                             </div>
                         </div>
                     </div>
