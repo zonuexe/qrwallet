@@ -115,7 +115,9 @@ QRコードを管理・共有するための静的なWebアプリケーション
 
 ## ライセンス
 
-MIT License
+Apache License 2.0
+
+詳細は [LICENSE](LICENSE) ファイルを参照してください。
 
 ## 著作権
 
