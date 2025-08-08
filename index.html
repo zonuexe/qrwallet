@@ -282,9 +282,56 @@
         </footer>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.1/build/qrcode.js"></script>
     <script src="app.js"></script>
+    <script>
+        // 遅延読み込み用のスクリプト管理
+        window.lazyScripts = {
+            jsQR: {
+                url: 'https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js',
+                loaded: false,
+                promise: null
+            },
+            qrcode: {
+                url: 'https://cdn.jsdelivr.net/npm/qrcode@1.5.1/build/qrcode.js',
+                loaded: false,
+                promise: null
+            }
+        };
+
+        // スクリプトの遅延読み込み関数
+        function loadScript(scriptName) {
+            const script = window.lazyScripts[scriptName];
+            if (!script) {
+                return Promise.reject(new Error(`Unknown script: ${scriptName}`));
+            }
+
+            if (script.loaded) {
+                return Promise.resolve();
+            }
+
+            if (script.promise) {
+                return script.promise;
+            }
+
+            script.promise = new Promise((resolve, reject) => {
+                const scriptElement = document.createElement('script');
+                scriptElement.src = script.url;
+                scriptElement.onload = () => {
+                    script.loaded = true;
+                    resolve();
+                };
+                scriptElement.onerror = () => {
+                    reject(new Error(`Failed to load ${scriptName}`));
+                };
+                document.head.appendChild(scriptElement);
+            });
+
+            return script.promise;
+        }
+
+        // グローバル関数として公開
+        window.loadScript = loadScript;
+    </script>
 </body>
 
 </html>
