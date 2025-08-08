@@ -50,8 +50,8 @@ createApp({
 
     async mounted() {
         await this.loadHistoryFromURL();
-        await this.checkQRCodeLibrary();
-        await this.waitForQRCodeLibrary();
+        this.checkQRCodeLibrary();
+        this.waitForQRCodeLibrary();
     },
 
     methods: {
@@ -79,45 +79,39 @@ createApp({
             }, 300);
         },
 
-        async generateAllQRCodes() {
-            this.$nextTick(async () => {
+        generateAllQRCodes() {
+            this.$nextTick(() => {
                 // DOM要素が準備できるまで少し待機
-                setTimeout(async () => {
-                    for (let i = 0; i < this.qrHistory.length; i++) {
-                        await this.generateQRPreview(this.qrHistory[i], i);
-                    }
+                setTimeout(() => {
+                    this.qrHistory.forEach((item, index) => {
+                        this.generateQRPreview(item, index);
+                    });
                 }, 100);
             });
         },
 
-        async generateQRPreview(data, index) {
-            try {
-                if (typeof QRCode === 'undefined') {
-                    await window.loadScript('qrcode');
-                }
+        generateQRPreview(data, index) {
+            if (typeof QRCode === 'undefined') return;
 
-                const previewContainers = this.$refs.qrPreview;
-                if (!previewContainers || !Array.isArray(previewContainers) || !previewContainers[index]) return;
+            const previewContainers = this.$refs.qrPreview;
+            if (!previewContainers || !Array.isArray(previewContainers) || !previewContainers[index]) return;
 
-                const previewContainer = previewContainers[index];
-                if (!previewContainer) return;
+            const previewContainer = previewContainers[index];
+            if (!previewContainer) return;
 
-                const canvas = document.createElement('canvas');
-                previewContainer.innerHTML = '';
-                previewContainer.appendChild(canvas);
+            const canvas = document.createElement('canvas');
+            previewContainer.innerHTML = '';
+            previewContainer.appendChild(canvas);
 
-                QRCode.toCanvas(canvas, data, {
-                    width: 80,
-                    margin: 1,
-                    color: {
-                        dark: '#000000',
-                        light: '#FFFFFF'
-                    },
-                    errorCorrectionLevel: 'L'
-                });
-            } catch (error) {
-                console.error('QRプレビュー生成に失敗しました:', error);
-            }
+            QRCode.toCanvas(canvas, data, {
+                width: 80,
+                margin: 1,
+                color: {
+                    dark: '#000000',
+                    light: '#FFFFFF'
+                },
+                errorCorrectionLevel: 'L'
+            });
         },
 
         truncateText(text, maxLength) {
@@ -226,36 +220,28 @@ createApp({
             this.selectedQRIndex = -1;
         },
 
-        async generateDetailQR() {
-            if (!this.selectedQRData) return;
+        generateDetailQR() {
+            if (!this.selectedQRData || typeof QRCode === 'undefined') return;
 
-            try {
-                if (typeof QRCode === 'undefined') {
-                    await window.loadScript('qrcode');
-                }
+            const canvas = document.createElement('canvas');
+            this.$refs.qrDetailCode.innerHTML = '';
+            this.$refs.qrDetailCode.appendChild(canvas);
 
-                const canvas = document.createElement('canvas');
-                this.$refs.qrDetailCode.innerHTML = '';
-                this.$refs.qrDetailCode.appendChild(canvas);
+            // 画面幅に合わせてQRコードサイズを調整
+            const container = this.$refs.qrDetailCode;
+            const maxWidth = Math.min(window.innerWidth * 0.8, 600); // 最大600px
+            const requestedSize = parseInt(this.detailQROptions.size);
+            const actualSize = Math.min(requestedSize, maxWidth - 40); // パディングを考慮
 
-                // 画面幅に合わせてQRコードサイズを調整
-                const container = this.$refs.qrDetailCode;
-                const maxWidth = Math.min(window.innerWidth * 0.8, 600); // 最大600px
-                const requestedSize = parseInt(this.detailQROptions.size);
-                const actualSize = Math.min(requestedSize, maxWidth - 40); // パディングを考慮
-
-                QRCode.toCanvas(canvas, this.selectedQRData, {
-                    width: actualSize,
-                    margin: parseInt(this.detailQROptions.margin),
-                    color: {
-                        dark: this.detailQROptions.darkColor,
-                        light: this.detailQROptions.lightColor
-                    },
-                    errorCorrectionLevel: this.detailQROptions.errorLevel
-                });
-            } catch (error) {
-                console.error('QRコード生成に失敗しました:', error);
-            }
+            QRCode.toCanvas(canvas, this.selectedQRData, {
+                width: actualSize,
+                margin: parseInt(this.detailQROptions.margin),
+                color: {
+                    dark: this.detailQROptions.darkColor,
+                    light: this.detailQROptions.lightColor
+                },
+                errorCorrectionLevel: this.detailQROptions.errorLevel
+            });
         },
 
         regenerateDetailQR() {
@@ -395,23 +381,20 @@ createApp({
             }
         },
 
-        async generateQRCode() {
+        generateQRCode() {
             if (!this.qrInputText.trim()) {
                 alert('テキストを入力してください');
                 return;
             }
 
-            try {
-                if (typeof QRCode === 'undefined') {
-                    await window.loadScript('qrcode');
-                }
-
-                this.currentQRData = this.qrInputText;
-                this.showQRGenerator = true;
-                this.createQRCode();
-            } catch (error) {
-                alert('QRCodeライブラリの読み込みに失敗しました');
+            if (typeof QRCode === 'undefined') {
+                alert('QRCodeライブラリが読み込まれていません');
+                return;
             }
+
+            this.currentQRData = this.qrInputText;
+            this.showQRGenerator = true;
+            this.createQRCode();
         },
 
         addToWallet() {
@@ -622,27 +605,13 @@ createApp({
             return new Uint8Array(bytes).buffer;
         },
 
-        async checkQRCodeLibrary() {
-            // QRCodeライブラリが必要な場合のみ読み込み
-            if (typeof QRCode === 'undefined' && this.qrHistory.length > 0) {
-                try {
-                    await window.loadScript('qrcode');
-                } catch (error) {
-                    console.error('QRCodeライブラリの読み込みに失敗しました:', error);
-                }
-            }
+        checkQRCodeLibrary() {
+            // QRCodeライブラリは最初から読み込まれているため、チェックのみ
         },
 
-        async waitForQRCodeLibrary() {
+        waitForQRCodeLibrary() {
             if (typeof QRCode !== 'undefined') {
                 this.generateAllQRCodes();
-            } else if (this.qrHistory.length > 0) {
-                try {
-                    await window.loadScript('qrcode');
-                    this.generateAllQRCodes();
-                } catch (error) {
-                    console.error('QRCodeライブラリの読み込みに失敗しました:', error);
-                }
             }
         },
 
