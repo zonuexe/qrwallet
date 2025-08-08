@@ -227,8 +227,14 @@ createApp({
             this.$refs.qrDetailCode.innerHTML = '';
             this.$refs.qrDetailCode.appendChild(canvas);
 
+            // 画面幅に合わせてQRコードサイズを調整
+            const container = this.$refs.qrDetailCode;
+            const maxWidth = Math.min(window.innerWidth * 0.8, 600); // 最大600px
+            const requestedSize = parseInt(this.detailQROptions.size);
+            const actualSize = Math.min(requestedSize, maxWidth - 40); // パディングを考慮
+
             QRCode.toCanvas(canvas, this.selectedQRData, {
-                width: parseInt(this.detailQROptions.size),
+                width: actualSize,
                 margin: parseInt(this.detailQROptions.margin),
                 color: {
                     dark: this.detailQROptions.darkColor,
