@@ -288,17 +288,13 @@
         // 遅延読み込み用のスクリプト管理（jsQRのみ）
         window.lazyScripts = {
             jsQR: {
-                urls: [
-                    'https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js',
-                    'https://unpkg.com/jsqr@1.4.0/dist/jsQR.min.js',
-                    'https://cdnjs.cloudflare.com/ajax/libs/jsQR/1.4.0/jsQR.min.js'
-                ],
+                url: 'https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js',
                 loaded: false,
                 promise: null
             }
         };
 
-        // スクリプトの遅延読み込み関数（複数CDN対応）
+        // スクリプトの遅延読み込み関数
         function loadScript(scriptName) {
             const script = window.lazyScripts[scriptName];
             if (!script) {
@@ -314,27 +310,16 @@
             }
 
             script.promise = new Promise((resolve, reject) => {
-                function tryLoadScript(index = 0) {
-                    if (index >= script.urls.length) {
-                        reject(new Error(`Failed to load ${scriptName} from all CDNs`));
-                        return;
-                    }
-
-                    const scriptElement = document.createElement('script');
-                    scriptElement.src = script.urls[index];
-                    scriptElement.onload = () => {
-                        script.loaded = true;
-                        console.log(`${scriptName} loaded from:`, script.urls[index]);
-                        resolve();
-                    };
-                    scriptElement.onerror = () => {
-                        console.warn(`${scriptName} CDN failed:`, script.urls[index]);
-                        tryLoadScript(index + 1);
-                    };
-                    document.head.appendChild(scriptElement);
-                }
-
-                tryLoadScript();
+                const scriptElement = document.createElement('script');
+                scriptElement.src = script.url;
+                scriptElement.onload = () => {
+                    script.loaded = true;
+                    resolve();
+                };
+                scriptElement.onerror = () => {
+                    reject(new Error(`Failed to load ${scriptName}`));
+                };
+                document.head.appendChild(scriptElement);
             });
 
             return script.promise;
