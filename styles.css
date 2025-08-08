@@ -458,6 +458,16 @@ header p {
         max-width: 100%;
         height: auto;
     }
+
+    .btn-close {
+        position: absolute;
+        right: 15px;
+        top: 15px;
+        transform: none;
+        width: 35px;
+        height: 35px;
+        font-size: 1.5rem;
+    }
 }
 
 /* セクション共通スタイル */
@@ -910,6 +920,16 @@ footer {
         padding: 6px 12px;
         font-size: 0.8rem;
         margin: 0 4px;
+    }
+
+    .btn-close {
+        position: absolute;
+        right: 10px;
+        top: 10px;
+        transform: none;
+        width: 30px;
+        height: 30px;
+        font-size: 1.2rem;
     }
 }
 
