@@ -362,6 +362,9 @@ createApp({
             // カメラを停止
             this.stopCamera();
             
+            // QRコード読み取りセクションを折り畳む
+            this.showCameraSection = false;
+            
             // QRコード生成セクションを表示してQRコードを生成
             this.showQRGenerator = true;
             this.$nextTick(() => {
