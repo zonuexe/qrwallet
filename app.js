@@ -355,8 +355,18 @@ createApp({
         handleQRCodeDetected(data) {
             this.scannedData = data;
             this.currentQRData = data;
+            this.qrInputText = data; // テキスト入力欄に反映
             this.scanStatus = 'QRコードを検出しました！';
             this.playSuccessSound();
+            
+            // カメラを停止
+            this.stopCamera();
+            
+            // QRコード生成セクションを表示してQRコードを生成
+            this.showQRGenerator = true;
+            this.$nextTick(() => {
+                this.createQRCode();
+            });
         },
 
         playSuccessSound() {
