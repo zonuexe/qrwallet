@@ -3,6 +3,7 @@ const { createApp } = Vue;
 createApp({
     data() {
         return {
+            isAppReady: false,
             currentView: 'main',
             showQRDetail: false,
             selectedQRIndex: -1,
@@ -53,6 +54,7 @@ createApp({
         this.checkQRCodeLibrary();
         this.waitForQRCodeLibrary();
         this.checkOnlineStatus();
+        this.isAppReady = true;
     },
 
     methods: {

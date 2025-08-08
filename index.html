@@ -29,8 +29,17 @@
 
 <body>
     <div id="app">
+        <!-- ローディング画面 -->
+        <div v-if="!isAppReady" class="loading-screen">
+            <div class="loading-content">
+                <h1>QR Wallet</h1>
+                <div class="loading-spinner"></div>
+                <p>アプリケーションを初期化しています...</p>
+            </div>
+        </div>
+
         <!-- メイン画面（QRコード一覧） -->
-        <div v-if="currentView === 'main'" class="container">
+        <div v-else-if="currentView === 'main'" class="container">
             <header>
                 <h1>QR Wallet</h1>
             </header>
@@ -196,7 +205,7 @@
         </div>
 
         <!-- QR詳細画面（モーダル） -->
-        <div v-if="showQRDetail" class="modal-overlay" @click="closeQRDetail">
+        <div v-if="isAppReady && showQRDetail" class="modal-overlay" @click="closeQRDetail">
             <div class="modal-content" @click.stop>
                 <div class="modal-header">
                     <h2>QRコード詳細</h2>
@@ -269,7 +278,7 @@
         </div>
 
         <!-- 削除確認モーダル -->
-        <div v-if="showDeleteConfirm" class="modal-overlay" @click="cancelDelete">
+        <div v-if="isAppReady && showDeleteConfirm" class="modal-overlay" @click="cancelDelete">
             <div class="modal-content modal-small" @click.stop>
                 <div class="modal-header">
                     <h2>削除確認</h2>
