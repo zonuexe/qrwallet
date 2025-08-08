@@ -20,14 +20,14 @@ createApp({
             qrOptions: {
                 size: 200,
                 margin: 2,
-                errorLevel: 'M',
+                errorLevel: 'L',
                 darkColor: '#000000',
                 lightColor: '#FFFFFF'
             },
             detailQROptions: {
                 size: 200,
                 margin: 2,
-                errorLevel: 'M',
+                errorLevel: 'L',
                 darkColor: '#000000',
                 lightColor: '#FFFFFF'
             },
@@ -110,7 +110,7 @@ createApp({
                     dark: '#000000',
                     light: '#FFFFFF'
                 },
-                errorCorrectionLevel: 'M'
+                errorCorrectionLevel: 'L'
             });
         },
 
