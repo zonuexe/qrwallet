@@ -5,6 +5,23 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>QR Wallet</title>
+
+    <!-- PWA関連のメタタグ -->
+    <meta name="theme-color" content="#667eea">
+    <meta name="description" content="QRコードを管理・共有するためのWebアプリケーション">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="QR Wallet">
+    <meta name="mobile-web-app-capable" content="yes">
+
+    <!-- PWAマニフェスト -->
+    <link rel="manifest" href="/manifest.json">
+
+    <!-- アイコン -->
+    <link rel="icon" type="image/png" sizes="32x32" href="/icons/icon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/icons/icon-16x16.png">
+    <link rel="apple-touch-icon" href="/icons/icon-192x192.png">
+
     <link rel="stylesheet" href="styles.css">
     <script src="https://kit.fontawesome.com/ca9a253b70.js" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/vue@3/dist/vue.global.js"></script>
@@ -327,6 +344,58 @@
 
         // グローバル関数として公開
         window.loadScript = loadScript;
+    </script>
+
+    <!-- Service Worker登録 -->
+    <script>
+        // Service Workerの登録
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/sw.js')
+                    .then((registration) => {
+                        console.log('SW registered: ', registration);
+                    })
+                    .catch((registrationError) => {
+                        console.log('SW registration failed: ', registrationError);
+                    });
+            });
+        }
+
+        // PWAインストールプロンプトの処理
+        let deferredPrompt;
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+
+            // インストールボタンを表示（必要に応じて）
+            const installButton = document.createElement('button');
+            installButton.textContent = 'アプリをインストール';
+            installButton.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                background: #667eea;
+                color: white;
+                border: none;
+                padding: 10px 20px;
+                border-radius: 5px;
+                cursor: pointer;
+                z-index: 1000;
+            `;
+            installButton.addEventListener('click', () => {
+                deferredPrompt.prompt();
+                deferredPrompt.userChoice.then((choiceResult) => {
+                    if (choiceResult.outcome === 'accepted') {
+                        console.log('User accepted the install prompt');
+                    } else {
+                        console.log('User dismissed the install prompt');
+                    }
+                    deferredPrompt = null;
+                    installButton.remove();
+                });
+            });
+            document.body.appendChild(installButton);
+        });
     </script>
 </body>
 

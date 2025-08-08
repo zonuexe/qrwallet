@@ -52,6 +52,7 @@ createApp({
         await this.loadHistoryFromURL();
         this.checkQRCodeLibrary();
         this.waitForQRCodeLibrary();
+        this.checkOnlineStatus();
     },
 
     methods: {
@@ -652,6 +653,48 @@ createApp({
         createNewWallet() {
             const baseUrl = window.location.origin + window.location.pathname;
             window.open(baseUrl, '_blank');
+        },
+
+        // オフライン対応
+        checkOnlineStatus() {
+            if (!navigator.onLine) {
+                this.showOfflineMessage();
+            }
+            
+            window.addEventListener('online', () => {
+                this.hideOfflineMessage();
+            });
+            
+            window.addEventListener('offline', () => {
+                this.showOfflineMessage();
+            });
+        },
+
+        showOfflineMessage() {
+            // オフラインメッセージを表示
+            const offlineMessage = document.createElement('div');
+            offlineMessage.id = 'offline-message';
+            offlineMessage.style.cssText = `
+                position: fixed;
+                top: 0;
+                left: 0;
+                right: 0;
+                background: #ff6b6b;
+                color: white;
+                text-align: center;
+                padding: 10px;
+                z-index: 10000;
+                font-weight: bold;
+            `;
+            offlineMessage.textContent = 'オフラインです。QRコードの管理は引き続き利用できます。';
+            document.body.appendChild(offlineMessage);
+        },
+
+        hideOfflineMessage() {
+            const offlineMessage = document.getElementById('offline-message');
+            if (offlineMessage) {
+                offlineMessage.remove();
+            }
         },
 
 
