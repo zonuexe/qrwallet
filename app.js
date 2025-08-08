@@ -305,10 +305,10 @@ createApp({
 
         async startCamera() {
             try {
-                // jsQRライブラリを遅延読み込み
+                // jsQRライブラリの読み込み待機
                 if (typeof jsQR === 'undefined') {
                     this.scanStatus = 'QRコード読み取りライブラリを読み込み中...';
-                    await window.loadScript('jsQR');
+                    await this.waitForJsQR();
                 }
 
                 this.stream = await navigator.mediaDevices.getUserMedia({
@@ -627,6 +627,29 @@ createApp({
             if (typeof QRCode !== 'undefined') {
                 this.generateAllQRCodes();
             }
+        },
+
+        // jsQRライブラリの読み込み待機
+        waitForJsQR() {
+            return new Promise((resolve) => {
+                if (typeof jsQR !== 'undefined') {
+                    resolve();
+                    return;
+                }
+                
+                const checkInterval = setInterval(() => {
+                    if (typeof jsQR !== 'undefined') {
+                        clearInterval(checkInterval);
+                        resolve();
+                    }
+                }, 100);
+                
+                // 10秒でタイムアウト
+                setTimeout(() => {
+                    clearInterval(checkInterval);
+                    resolve(); // エラーではなく、jsQRなしで続行
+                }, 10000);
+            });
         },
 
         addBookmark() {
