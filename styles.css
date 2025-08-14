@@ -1013,3 +1013,138 @@ footer {
     background: #fff5f5;
     border-color: #e53e3e;
 }
+
+/* ウォレット関連のスタイル */
+.wallet-info {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    margin-top: 10px;
+}
+
+.wallet-mode {
+    font-size: 0.9rem;
+    opacity: 0.8;
+    padding: 4px 12px;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 20px;
+}
+
+.wallet-name {
+    font-size: 1.1rem;
+    font-weight: 500;
+}
+
+.wallet-selector {
+    margin-bottom: 30px;
+}
+
+.wallet-tabs {
+    display: flex;
+    gap: 10px;
+    overflow-x: auto;
+    padding: 10px 0;
+}
+
+.wallet-tab {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 16px;
+    background: rgba(255, 255, 255, 0.1);
+    border: 2px solid transparent;
+    border-radius: 25px;
+    color: white;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.3s ease;
+}
+
+.wallet-tab:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+.wallet-tab.active {
+    background: rgba(255, 255, 255, 0.3);
+    border-color: rgba(255, 255, 255, 0.5);
+}
+
+.btn-delete-wallet {
+    background: rgba(220, 38, 38, 0.8);
+    border: none;
+    color: white;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 0.8rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.btn-delete-wallet:hover {
+    background: rgba(220, 38, 38, 1);
+}
+
+.btn-add-wallet {
+    background: rgba(34, 197, 94, 0.8);
+    border: none;
+    color: white;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 1.2rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.btn-add-wallet:hover {
+    background: rgba(34, 197, 94, 1);
+}
+
+.wallet-selection {
+    margin-top: 30px;
+    padding: 20px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 15px;
+}
+
+.wallet-selection h3 {
+    color: white;
+    margin-bottom: 20px;
+    text-align: center;
+}
+
+.wallet-selection-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.wallet-transfer-actions {
+    margin-top: 30px;
+    padding: 20px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 15px;
+}
+
+.wallet-transfer-actions h3 {
+    color: white;
+    margin-bottom: 20px;
+    text-align: center;
+}
+
+.wallet-transfer-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.save-to-history {
+    margin-top: 30px;
+    text-align: center;
+}

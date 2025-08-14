@@ -4,6 +4,7 @@ createApp({
     data() {
         return {
             isAppReady: false,
+            walletMode: 'local', // 'local' or 'portable'
             currentView: 'main',
             showQRDetail: false,
             selectedQRIndex: -1,
@@ -32,6 +33,13 @@ createApp({
                 darkColor: '#000000',
                 lightColor: '#FFFFFF'
             },
+            // ローカルウォレット用データ
+            localWallets: {
+                main: [],
+                sub: []
+            },
+            currentWalletIndex: 0, // 0: main, 1+: sub wallets
+            // ポータブルウォレット用データ（既存のqrHistory）
             qrHistory: [],
             currentQRData: '',
             textEncoder: new TextEncoder(),
@@ -45,12 +53,36 @@ createApp({
             return this.currentQRData && this.currentQRData.trim() !== '';
         },
         selectedQRData() {
-            return this.selectedQRIndex >= 0 ? this.qrHistory[this.selectedQRIndex] : '';
+            if (this.walletMode === 'local') {
+                const currentWallet = this.currentWalletIndex === 0 ? this.localWallets.main : this.localWallets.sub[this.currentWalletIndex - 1];
+                return this.selectedQRIndex >= 0 && currentWallet ? currentWallet[this.selectedQRIndex] : '';
+            } else {
+                return this.selectedQRIndex >= 0 ? this.qrHistory[this.selectedQRIndex] : '';
+            }
+        },
+        currentWalletData() {
+            if (this.walletMode === 'local') {
+                return this.currentWalletIndex === 0 ? this.localWallets.main : this.localWallets.sub[this.currentWalletIndex - 1];
+            } else {
+                return this.qrHistory;
+            }
+        },
+        currentWalletName() {
+            if (this.walletMode === 'local') {
+                return this.currentWalletIndex === 0 ? 'メインウォレット' : `サブウォレット ${this.currentWalletIndex}`;
+            } else {
+                return 'ポータブルウォレット';
+            }
         }
     },
 
     async mounted() {
-        await this.loadHistoryFromURL();
+        this.determineWalletMode();
+        if (this.walletMode === 'local') {
+            await this.loadLocalWallets();
+        } else {
+            await this.loadHistoryFromURL();
+        }
         this.checkQRCodeLibrary();
         this.waitForQRCodeLibrary();
         this.checkOnlineStatus();
@@ -58,6 +90,64 @@ createApp({
     },
 
     methods: {
+        // ウォレットモード判定
+        determineWalletMode() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const hasWalletData = urlParams.toString().trim() !== '';
+            this.walletMode = hasWalletData ? 'portable' : 'local';
+        },
+
+        // ローカルウォレット読み込み
+        async loadLocalWallets() {
+            try {
+                const savedMain = localStorage.getItem('qrwallet_main');
+                const savedSub = localStorage.getItem('qrwallet_sub');
+                
+                if (savedMain) {
+                    this.localWallets.main = JSON.parse(savedMain);
+                }
+                if (savedSub) {
+                    this.localWallets.sub = JSON.parse(savedSub);
+                }
+            } catch (error) {
+                console.error('ローカルウォレットの読み込みに失敗しました:', error);
+            }
+        },
+
+        // ローカルウォレット保存
+        saveLocalWallets() {
+            try {
+                localStorage.setItem('qrwallet_main', JSON.stringify(this.localWallets.main));
+                localStorage.setItem('qrwallet_sub', JSON.stringify(this.localWallets.sub));
+            } catch (error) {
+                console.error('ローカルウォレットの保存に失敗しました:', error);
+            }
+        },
+
+        // サブウォレット作成
+        createSubWallet() {
+            this.localWallets.sub.push([]);
+            this.saveLocalWallets();
+        },
+
+        // サブウォレット削除
+        deleteSubWallet(index) {
+            if (index >= 0 && index < this.localWallets.sub.length) {
+                this.localWallets.sub.splice(index, 1);
+                this.saveLocalWallets();
+                if (this.currentWalletIndex > index + 1) {
+                    this.currentWalletIndex--;
+                }
+            }
+        },
+
+        // ウォレット切り替え
+        switchWallet(index) {
+            this.currentWalletIndex = index;
+            this.selectedQRIndex = -1;
+            this.showQRDetail = false;
+        },
+
         switchToMainView() {
             this.currentView = 'main';
             this.stopCamera();
@@ -86,9 +176,12 @@ createApp({
             this.$nextTick(() => {
                 // DOM要素が準備できるまで少し待機
                 setTimeout(() => {
-                    this.qrHistory.forEach((item, index) => {
-                        this.generateQRPreview(item, index);
-                    });
+                    const currentData = this.currentWalletData;
+                    if (currentData) {
+                        currentData.forEach((item, index) => {
+                            this.generateQRPreview(item, index);
+                        });
+                    }
                 }, 100);
             });
         },
@@ -480,11 +573,20 @@ createApp({
 
         // 履歴管理
         saveToHistory() {
-            if (!this.currentQRData || this.qrHistory.includes(this.currentQRData)) {
-                return;
+            if (!this.currentQRData) return;
+            
+            if (this.walletMode === 'local') {
+                const currentWallet = this.currentWalletIndex === 0 ? this.localWallets.main : this.localWallets.sub[this.currentWalletIndex - 1];
+                if (currentWallet && !currentWallet.includes(this.currentQRData)) {
+                    currentWallet.push(this.currentQRData);
+                    this.saveLocalWallets();
+                }
+            } else {
+                if (!this.qrHistory.includes(this.currentQRData)) {
+                    this.qrHistory.push(this.currentQRData);
+                    this.updateURL();
+                }
             }
-            this.qrHistory.push(this.currentQRData);
-            this.updateURL();
             this.switchToMainView();
         },
 
@@ -499,6 +601,74 @@ createApp({
             this.createQRCode();
         },
 
+        // QRコードを他のウォレットにコピー・移動
+        copyToWallet(data, targetWalletIndex) {
+            if (this.walletMode === 'local') {
+                const targetWallet = targetWalletIndex === 0 ? this.localWallets.main : this.localWallets.sub[targetWalletIndex - 1];
+                if (targetWallet && !targetWallet.includes(data)) {
+                    targetWallet.push(data);
+                    this.saveLocalWallets();
+                    alert('ウォレットにコピーしました');
+                }
+            } else {
+                // ポータブルウォレットからローカルウォレットにコピー
+                if (!this.localWallets.main.includes(data)) {
+                    this.localWallets.main.push(data);
+                    this.saveLocalWallets();
+                    alert('ローカルウォレットにコピーしました');
+                }
+            }
+        },
+
+        moveToWallet(data, targetWalletIndex) {
+            if (this.walletMode === 'local') {
+                const currentWallet = this.currentWalletIndex === 0 ? this.localWallets.main : this.localWallets.sub[this.currentWalletIndex - 1];
+                const targetWallet = targetWalletIndex === 0 ? this.localWallets.main : this.localWallets.sub[targetWalletIndex - 1];
+                
+                if (currentWallet && targetWallet) {
+                    const index = currentWallet.indexOf(data);
+                    if (index > -1) {
+                        currentWallet.splice(index, 1);
+                        if (!targetWallet.includes(data)) {
+                            targetWallet.push(data);
+                        }
+                        this.saveLocalWallets();
+                        alert('ウォレットに移動しました');
+                    }
+                }
+            }
+        },
+
+        // メインウォレットに保存
+        saveToMainWallet() {
+            if (!this.currentQRData) return;
+            
+            if (!this.localWallets.main.includes(this.currentQRData)) {
+                this.localWallets.main.push(this.currentQRData);
+                this.saveLocalWallets();
+                alert('メインウォレットに保存しました');
+                this.switchToMainView();
+            } else {
+                alert('既にメインウォレットに存在します');
+            }
+        },
+
+        // サブウォレットに保存
+        saveToSubWallet(index) {
+            if (!this.currentQRData) return;
+            
+            if (index >= 0 && index < this.localWallets.sub.length) {
+                if (!this.localWallets.sub[index].includes(this.currentQRData)) {
+                    this.localWallets.sub[index].push(this.currentQRData);
+                    this.saveLocalWallets();
+                    alert(`サブウォレット ${index + 1} に保存しました`);
+                    this.switchToMainView();
+                } else {
+                    alert(`既にサブウォレット ${index + 1} に存在します`);
+                }
+            }
+        },
+
         async copyHistoryItem(text) {
             try {
                 await navigator.clipboard.writeText(text);
@@ -509,8 +679,16 @@ createApp({
         },
 
         deleteHistoryItem(index) {
-            this.qrHistory.splice(index, 1);
-            this.updateURL();
+            if (this.walletMode === 'local') {
+                const currentWallet = this.currentWalletIndex === 0 ? this.localWallets.main : this.localWallets.sub[this.currentWalletIndex - 1];
+                if (currentWallet) {
+                    currentWallet.splice(index, 1);
+                    this.saveLocalWallets();
+                }
+            } else {
+                this.qrHistory.splice(index, 1);
+                this.updateURL();
+            }
         },
 
         shareHistory() {

@@ -42,12 +42,38 @@
         <div v-else-if="currentView === 'main'" class="container">
             <header>
                 <h1>QR Wallet</h1>
+                <div class="wallet-info">
+                    <span class="wallet-mode">{{ walletMode === 'local' ? 'ローカルモード' : 'ポータブルモード' }}</span>
+                    <span class="wallet-name">{{ currentWalletName }}</span>
+                </div>
             </header>
 
             <main>
+                <!-- ローカルモードの場合のウォレット選択 -->
+                <div v-if="walletMode === 'local'" class="wallet-selector">
+                    <div class="wallet-tabs">
+                        <button 
+                            @click="switchWallet(0)" 
+                            :class="['wallet-tab', { active: currentWalletIndex === 0 }]">
+                            メインウォレット
+                        </button>
+                        <button 
+                            v-for="(subWallet, index) in localWallets.sub" 
+                            :key="index + 1"
+                            @click="switchWallet(index + 1)" 
+                            :class="['wallet-tab', { active: currentWalletIndex === index + 1 }]">
+                            サブウォレット {{ index + 1 }}
+                            <button @click.stop="deleteSubWallet(index)" class="btn-delete-wallet">×</button>
+                        </button>
+                        <button @click="createSubWallet" class="btn-add-wallet">
+                            <i class="fa-solid fa-plus"></i>
+                        </button>
+                    </div>
+                </div>
+
                 <!-- QRコード一覧 -->
-                <div v-if="qrHistory.length > 0" class="qr-grid">
-                    <div v-for="(item, index) in qrHistory" :key="index" class="qr-card">
+                <div v-if="currentWalletData && currentWalletData.length > 0" class="qr-grid">
+                    <div v-for="(item, index) in currentWalletData" :key="index" class="qr-card">
                         <button @click.stop="deleteQRFromList(index)" class="btn-delete-card">×</button>
                         <div class="qr-card-content" @click="openQRDetail(index)">
                             <div class="qr-preview" ref="qrPreview">
@@ -62,7 +88,7 @@
                 </div>
 
                 <!-- 空の状態 -->
-                <div v-else class="empty-state">
+                <div v-else-if="!currentWalletData || currentWalletData.length === 0" class="empty-state">
                     <div class="empty-icon">📱</div>
                     <h2>QRコードがありません</h2>
                     <p>「Add QR code」ボタンを押してQRコードを追加してください</p>
@@ -199,6 +225,33 @@
                                     :disabled="!hasGeneratedQR">クリップボードにコピー</button>
                             </div>
                         </div>
+
+                        <!-- ウォレット選択UI（ローカルモードの場合） -->
+                        <div v-if="showQRGenerator && walletMode === 'local'" class="wallet-selection">
+                            <h3>どのウォレットに保存しますか？</h3>
+                            <div class="wallet-selection-buttons">
+                                <button @click="saveToMainWallet" class="btn btn-primary">
+                                    <i class="fa-solid fa-wallet"></i>
+                                    メインウォレットに保存
+                                </button>
+                                <button 
+                                    v-for="(subWallet, index) in localWallets.sub" 
+                                    :key="index"
+                                    @click="saveToSubWallet(index)" 
+                                    class="btn btn-secondary">
+                                    <i class="fa-solid fa-wallet"></i>
+                                    サブウォレット {{ index + 1 }} に保存
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- 履歴に保存ボタン（ポータブルモードの場合） -->
+                        <div v-if="showQRGenerator && walletMode === 'portable'" class="save-to-history">
+                            <button @click="saveToHistory" class="btn btn-primary" :disabled="!canSaveToHistory">
+                                <i class="fa-solid fa-save"></i>
+                                履歴に保存
+                            </button>
+                        </div>
                     </section>
                 </div>
             </main>
@@ -272,6 +325,54 @@
                             <button @click="copyDetailQR" class="btn btn-secondary">クリップボードにコピー</button>
                             <button @click="deleteQR" class="btn btn-danger">削除</button>
                         </div>
+
+                        <!-- ウォレット間のコピー・移動 -->
+                        <div v-if="walletMode === 'local'" class="wallet-transfer-actions">
+                            <h3>他のウォレットに移動・コピー</h3>
+                            <div class="wallet-transfer-buttons">
+                                <button 
+                                    v-for="(subWallet, index) in localWallets.sub" 
+                                    :key="index + 1"
+                                    @click="copyToWallet(selectedQRData, index + 1)" 
+                                    class="btn btn-subtle">
+                                    <i class="fa-solid fa-copy"></i>
+                                    サブウォレット {{ index + 1 }} にコピー
+                                </button>
+                                <button 
+                                    v-for="(subWallet, index) in localWallets.sub" 
+                                    :key="index + 1"
+                                    @click="moveToWallet(selectedQRData, index + 1)" 
+                                    class="btn btn-subtle">
+                                    <i class="fa-solid fa-arrow-right"></i>
+                                    サブウォレット {{ index + 1 }} に移動
+                                </button>
+                                <button 
+                                    v-if="currentWalletIndex !== 0"
+                                    @click="copyToWallet(selectedQRData, 0)" 
+                                    class="btn btn-subtle">
+                                    <i class="fa-solid fa-copy"></i>
+                                    メインウォレットにコピー
+                                </button>
+                                <button 
+                                    v-if="currentWalletIndex !== 0"
+                                    @click="moveToWallet(selectedQRData, 0)" 
+                                    class="btn btn-subtle">
+                                    <i class="fa-solid fa-arrow-right"></i>
+                                    メインウォレットに移動
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- ポータブルウォレットからローカルウォレットへのコピー -->
+                        <div v-if="walletMode === 'portable'" class="wallet-transfer-actions">
+                            <h3>ローカルウォレットにコピー</h3>
+                            <div class="wallet-transfer-buttons">
+                                <button @click="copyToWallet(selectedQRData, 0)" class="btn btn-subtle">
+                                    <i class="fa-solid fa-copy"></i>
+                                    ローカルウォレットにコピー
+                                </button>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -288,7 +389,7 @@
                         <div class="delete-confirm-icon">⚠️</div>
                         <p class="delete-confirm-message">このQRコードの登録を解除してよいですか？</p>
                         <div class="delete-confirm-text">
-                            <strong>内容:</strong> {{ qrHistory[deleteTargetIndex] }}
+                            <strong>内容:</strong> {{ currentWalletData[deleteTargetIndex] }}
                         </div>
                         <div class="delete-confirm-actions">
                             <button @click="confirmDelete" class="btn btn-danger">削除</button>
